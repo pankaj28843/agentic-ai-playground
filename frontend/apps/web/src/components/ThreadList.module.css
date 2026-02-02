@@ -1,0 +1,57 @@
+@layer components {
+  .threadList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .threadNew {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px dashed var(--border);
+    background: transparent;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .threadNew svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .threadLoading {
+    padding: 8px 10px;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  .threadItem {
+    border-radius: 6px;
+    border: 1px solid transparent;
+  }
+
+  .threadItem[data-active="true"] {
+    border-color: var(--accent-soft);
+    background: var(--surface-2);
+  }
+
+  .threadTrigger {
+    display: block;
+    width: 100%;
+    border: none;
+    background: transparent;
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    color: var(--ink);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

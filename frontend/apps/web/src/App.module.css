@@ -1,0 +1,450 @@
+@layer components {
+  .appShell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    height: 100dvh;
+    padding: 8px;
+    gap: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Prevent text selection while resizing */
+  .appShell.isResizing {
+    user-select: none;
+  }
+
+  /* Desktop layout container */
+  .desktopLayout {
+    display: flex;
+    flex: 1;
+    gap: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Panel resize handle */
+  .resizeHandle {
+    width: 8px;
+    background: transparent;
+    cursor: col-resize;
+    position: relative;
+    flex-shrink: 0;
+    z-index: 5;
+    touch-action: none;
+  }
+
+  .resizeHandle::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 40px;
+    background: var(--border);
+    border-radius: 2px;
+    opacity: 0.5;
+    transition: opacity 0.15s ease, background 0.15s ease, height 0.15s ease;
+  }
+
+  .resizeHandle:hover::after {
+    opacity: 1;
+    background: var(--muted);
+    height: 60px;
+  }
+
+  .appShell.isResizing .resizeHandle::after {
+    opacity: 1;
+    background: var(--accent);
+    height: 80px;
+  }
+
+  /* Focus styles for keyboard accessibility */
+  .resizeHandle:focus {
+    outline: none;
+  }
+
+  .resizeHandle:focus-visible::after {
+    opacity: 1;
+    background: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+
+  /* Trace panel container */
+  .tracePanelContainer {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .mobileHeader {
+    display: none;
+  }
+
+  .mobileNavToggle {
+    display: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .mobileNavToggle svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mobileTitle {
+    display: none;
+  }
+
+  .mobileOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(18, 22, 26, 0.4);
+    border: none;
+    z-index: 15;
+  }
+
+  .appSidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  /* Sidebar visibility for desktop/mobile */
+  .appSidebar.mobileOnly {
+    display: none;
+  }
+
+  .appSidebar.desktopOnly {
+    height: 100%;
+    min-width: 180px;
+    max-width: 400px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brandLink {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    text-align: left;
+    color: inherit;
+    font: inherit;
+  }
+
+  .brandLink:hover {
+    opacity: 0.8;
+  }
+
+  .brandIcon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: white;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+
+  .brandIcon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .brandTitle {
+    font-size: 0.95rem;
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .themeToggle {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--muted);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .themeToggle:hover {
+    background: var(--surface);
+    color: var(--ink);
+    border-color: var(--accent);
+  }
+
+  .themeToggle svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .sidebarThreads {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sidebarControls {
+    display: flex;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .controlRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    flex: 1;
+    min-width: 0;
+  }
+
+  .controlRow span {
+    flex-shrink: 0;
+  }
+
+  .controlRow select {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 24px 5px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background-color: var(--surface);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235c6370' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  .controlRow select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+
+  .controlRow select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--surface-2);
+  }
+
+  :global([data-theme="dark"]) .controlRow select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b929a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme="light"])) .controlRow select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b929a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    }
+  }
+
+  .appMain {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .threadLoading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    height: 100%;
+    min-height: 300px;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  .threadLoadingSpinner {
+    width: 32px;
+    height: 32px;
+    animation: spin 1s linear infinite;
+    color: var(--accent);
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Backdrop for mobile */
+  .traceBackdrop {
+    display: none;
+  }
+
+  @media (max-width: 960px) {
+    .appShell {
+      flex-direction: column;
+      padding: 0;
+    }
+
+    /* Keep flex layout so thread viewport can size and scroll correctly */
+    .desktopLayout {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .desktopLayout .resizeHandle {
+      display: none;
+    }
+
+    .tracePanelContainer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(90vw, 400px);
+      z-index: 30;
+    }
+
+    /* Show mobile sidebar, hide desktop */
+    .appSidebar.mobileOnly {
+      display: flex;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      width: min(280px, 80vw);
+      max-width: none;
+      min-width: auto;
+      transform: translateX(-110%);
+      transition: transform 0.2s ease;
+      z-index: 20;
+      border-radius: 0;
+      padding: 12px;
+    }
+
+    .appSidebar.desktopOnly {
+      display: none !important;
+    }
+
+    .appShell.menuOpen .appSidebar.mobileOnly {
+      transform: translateX(0);
+    }
+
+    /* Mobile trace backdrop */
+    .traceBackdrop {
+      display: block;
+      position: fixed;
+      inset: 0;
+      background: rgba(18, 22, 26, 0.5);
+      border: none;
+      z-index: 25;
+      cursor: pointer;
+    }
+
+    .mobileHeader {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .mobileNavToggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mobileTitle {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .appShell.menuOpen .mobileOverlay {
+      display: block;
+    }
+
+    .brand {
+      padding: 4px 0 10px;
+    }
+
+    .sidebarThreads {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .sidebarControls {
+      padding-top: 10px;
+    }
+
+    .controlRow {
+      flex-direction: row;
+    }
+
+    .appMain {
+      min-height: 0;
+      border-radius: 0;
+      margin: 0;
+      box-shadow: none;
+      border: none;
+    }
+  }
+}

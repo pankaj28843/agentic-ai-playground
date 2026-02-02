@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.coverage
+
+# Application data
+.runs/
+.exports/
+.data/
+.sessions/
+logs/
+test_results/
+
+# Secrets and credentials - NEVER commit these
+.env
+.env.local
+.env.*.local
+.aws-credentials.json
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# OS files
+.DS_Store
+/.DS_Store
+
+# Frontend
+frontend/**/node_modules/
+frontend/test-results/
+frontend/playwright-report/
+
+# Danske Bank deployment (auto-generated)
+frontend/Dockerfile.*.example
+frontend/compose.example.yaml

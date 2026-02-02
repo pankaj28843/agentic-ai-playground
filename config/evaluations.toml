@@ -1,0 +1,51 @@
+# Evaluation Configurations
+# Define test cases and evaluators for agent quality assurance
+#
+# NOTE: These configurations are defined for future use. The evaluation loader
+# is not yet wired up (no `evaluations` entry in CONFIG_FILES). To run evaluations
+# programmatically, create an EvalConfig and pass it to EvalRunner(config).run(agent).
+
+[evaluations.techdocs_basic]
+name = "TechDocs Basic Functionality"
+description = "Basic tests for TechDocs agent functionality"
+agent_profile = "general"
+
+[[evaluations.techdocs_basic.cases]]
+name = "List tenants"
+input = "List the first 5 documentation tenants available"
+expected_trajectory = ["TechDocs-list_tenants"]
+
+[[evaluations.techdocs_basic.cases]]
+name = "Find Django docs"
+input = "Find documentation for Django"
+expected_trajectory = ["TechDocs-find_tenant"]
+
+[[evaluations.techdocs_basic.cases]]
+name = "Search Django models"
+input = "Search for Django model documentation about QuerySet"
+expected_trajectory = ["TechDocs-find_tenant", "TechDocs-root_search"]
+
+[[evaluations.techdocs_basic.evaluators]]
+type = "output"
+rubric = "The output correctly lists documentation tenants or search results."
+
+[evaluations.deep_research]
+name = "Deep Research Quality"
+description = "Tests for deep research agent quality"
+agent_profile = "deep_researcher"
+model_config = { temperature = 0.3 }
+
+[[evaluations.deep_research.cases]]
+name = "Multi-source research"
+input = "Explain how to set up FastAPI with SQLAlchemy, citing the official documentation"
+expected_trajectory = ["TechDocs-find_tenant", "TechDocs-root_search", "TechDocs-root_fetch"]
+
+[[evaluations.deep_research.evaluators]]
+type = "output"
+rubric = """
+The response should:
+1. Provide accurate FastAPI setup instructions
+2. Include SQLAlchemy integration details
+3. Cite official documentation sources
+4. Include working code examples
+"""

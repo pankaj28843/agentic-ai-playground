@@ -1,0 +1,26 @@
+# Public Profiles - UI-visible configurations that map to execution entry points
+# These are the only profiles exposed in the UI dropdown
+
+[public_profiles.quick]
+name = "Quick"
+description = "Fast responses for simple questions"
+entrypoint_type = "single"
+entrypoint_reference = "general"
+default = true
+metadata = { ui_order = 1, icon = "zap" }
+
+[public_profiles.research]
+name = "Research"
+description = "Comprehensive research with parallel information gathering"
+entrypoint_type = "graph"
+entrypoint_reference = "research_graph"
+default = false
+metadata = { ui_order = 2, icon = "search" }
+
+[public_profiles.expert]
+name = "Expert"
+description = "Deep analysis with planning, research, validation, and synthesis"
+entrypoint_type = "swarm"
+entrypoint_reference = "expert_swarm"
+default = false
+metadata = { ui_order = 3, icon = "brain" }

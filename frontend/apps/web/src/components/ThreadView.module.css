@@ -1,0 +1,592 @@
+@layer components {
+  .threadRoot {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .threadViewport {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px 16px 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overscroll-behavior: contain;
+    scroll-padding-bottom: 120px;
+  }
+
+  .threadFooter {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px 16px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .threadWelcome {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+  }
+
+  .threadWelcomeCard {
+    padding: 24px 28px;
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    max-width: 520px;
+    width: 100%;
+  }
+
+  .threadWelcomeCard h1 {
+    margin: 6px 0 10px;
+    font-size: 1.6rem;
+  }
+
+  .threadWelcomeCard p {
+    margin: 0;
+    color: var(--muted);
+  }
+
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .threadWelcomeHint {
+    font-size: 0.85rem;
+    color: var(--ink);
+    opacity: 0.7;
+    text-align: center;
+  }
+
+  .scrollToBottom {
+    position: absolute;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    background: var(--surface);
+    color: var(--ink);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .scrollToBottom:hover {
+    background: var(--surface-2);
+    border-color: var(--accent);
+  }
+
+  .scrollToBottom[data-disabled="true"],
+  .scrollToBottom:disabled {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%) translateY(10px);
+  }
+
+  .scrollToBottom svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .composer {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    padding: 8px 8px 8px 16px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .composer:focus-within {
+    border-color: var(--accent);
+    outline: none;
+  }
+
+  .composerInput {
+    width: 100%;
+    min-height: 48px;
+    max-height: 200px;
+    border: none;
+    resize: none;
+    font-size: 1rem;
+    line-height: 1.5;
+    font-family: inherit;
+    background: transparent;
+    color: var(--ink);
+    outline: none;
+    padding: 8px 0;
+  }
+
+  .composerInput:focus {
+    outline: none;
+    box-shadow: none;
+    border: none;
+  }
+
+  .composerInput::placeholder {
+    color: var(--muted);
+  }
+
+  .composerActions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .composerSend,
+  .composerCancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 999px;
+    border: none;
+    font-size: 0.85rem;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  .composerSend {
+    background: var(--accent);
+    color: white;
+  }
+
+  .composerSend:hover:not(:disabled) {
+    background: #164059;
+  }
+
+  .composerSend:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .composerCancel {
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+
+  .composerCancel:hover {
+    background: var(--border);
+  }
+
+  .composerSend svg,
+  .composerCancel svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Attachment dropzone */
+  .composerDropzone {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .composerDropzone[data-dragging="true"] {
+    background: var(--accent-soft);
+  }
+
+  /* Composer attachments preview */
+  .composerAttachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .composerAttachments:empty {
+    display: none;
+  }
+
+  /* Attachment tile */
+  .attachmentTile {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+
+  .attachmentImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .attachmentFallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+  }
+
+  .attachmentFallback svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .attachmentRemove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+
+  .attachmentTile:hover .attachmentRemove,
+  .attachmentTile:focus-within .attachmentRemove {
+    opacity: 1;
+  }
+
+  .attachmentRemove svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* Attachment button in composer */
+  .attachmentBtn {
+    margin-right: auto;
+  }
+
+  /* Message attachments display */
+  .messageAttachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .messageAttachments:empty {
+    display: none;
+  }
+
+  .messageAttachmentTile {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+
+  .messageAttachmentTile .attachmentImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+  }
+
+  .messageAttachmentTile .attachmentFallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+  }
+
+  .message {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    align-items: flex-start;
+    min-width: 0;
+  }
+
+  .messageUser {
+    grid-template-columns: 1fr auto;
+    justify-items: end;
+  }
+
+  .messageAvatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-weight: 600;
+    display: grid;
+    place-items: center;
+    font-size: 0.8rem;
+  }
+
+  .messageUser .messageAvatar {
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+
+  .messageBody {
+    background: var(--msg-assistant);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    max-width: 100%;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .messageMeta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .messageStatus {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+    background: rgba(30, 75, 108, 0.12);
+    color: var(--accent);
+  }
+
+  .messageStatusThinking {
+    background: rgba(168, 110, 29, 0.15);
+    color: #8a5b1d;
+  }
+
+  .messageUser .messageBody {
+    background: var(--msg-user);
+    color: var(--ink);
+    border: 1px solid var(--border);
+  }
+
+  .actionBar {
+    display: flex;
+    gap: 4px;
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Show action bar on hover over message-body only (narrower area) */
+  .messageBody:hover .actionBar,
+  .actionBar:focus-within {
+    opacity: 1;
+  }
+
+  .actionBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .actionBtn:hover {
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+
+  .actionBtn:focus-visible {
+    box-shadow: var(--focus-ring);
+    outline: none;
+  }
+
+  .actionBtn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* CSS-only copy icon toggle (no flicker) */
+  .actionIconCopied,
+  .actionIconDefault {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .actionIconCopied {
+    display: none;
+    color: #22c55e;
+  }
+
+  .actionBtn[data-copied="true"] .actionIconDefault {
+    display: none;
+  }
+
+  .actionBtn[data-copied="true"] .actionIconCopied {
+    display: flex;
+  }
+
+  .messageError {
+    margin-top: 8px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    background: #ffe8e5;
+    color: #9b2d20;
+    font-size: 0.85rem;
+  }
+
+  .editComposer {
+    grid-template-columns: 1fr;
+  }
+
+  .editComposerRoot {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .editComposerInput {
+    border: none;
+    resize: none;
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+  }
+
+  .editComposerActions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .ghost,
+  .primary {
+    border: none;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .ghost {
+    background: var(--surface-2);
+    color: var(--muted);
+  }
+
+  .primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  @media (max-width: 960px) {
+    .threadViewport {
+      padding: 10px 10px 90px;
+    }
+
+    .threadFooter {
+      padding: 8px 10px 10px;
+    }
+
+    .message {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .messageAssistant {
+      grid-template-columns: 1fr;
+    }
+
+    .messageAvatar {
+      display: none;
+    }
+
+    .messageBody {
+      max-width: 100%;
+      padding: 10px 12px;
+    }
+
+    .actionBar {
+      opacity: 1;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .threadWelcomeCard {
+      padding: 16px;
+      margin: 8px;
+    }
+
+    .threadWelcomeCard h1 {
+      font-size: 1.4rem;
+    }
+
+    .composer {
+      padding: 8px 10px;
+    }
+
+    .threadViewport {
+      padding: 8px 8px 85px;
+    }
+
+    .threadFooter {
+      padding: 6px 8px 8px;
+    }
+  }
+}

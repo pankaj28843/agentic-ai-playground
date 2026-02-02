@@ -1,0 +1,18 @@
+- name: bug
+  color: "d73a4a"
+  description: "Something is not working"
+- name: feature
+  color: "1d76db"
+  description: "New feature or request"
+- name: docs
+  color: "0075ca"
+  description: "Documentation updates"
+- name: chore
+  color: "a2eeef"
+  description: "Maintenance and refactoring"
+- name: agent
+  color: "0e8a16"
+  description: "Agent runtime or tooling work"
+- name: research
+  color: "5319e7"
+  description: "Research and experimentation"

@@ -1,0 +1,27 @@
+# MCP Providers Configuration
+# Each provider defines a remote MCP server that can be used as a tool source.
+# Providers are loaded dynamically and can be added without code changes.
+
+[techdocs]
+name = "TechDocs"
+description = "Documentation search and retrieval via TechDocs MCP server"
+url_env = "TECHDOCS_MCP_URL"
+url_default = ""
+enabled = true
+
+# Add more providers here as needed:
+#
+# [github]
+# name = "GitHub"
+# description = "GitHub MCP server for repository operations"
+# url_env = "GITHUB_MCP_URL"
+# url_default = "https://api.github.com/mcp/"
+# enabled = false
+# headers_env = "GITHUB_MCP_HEADERS"  # Optional: JSON string of headers
+#
+# [filesystem]
+# name = "Filesystem"
+# description = "Local filesystem access via MCP"
+# url_env = "FILESYSTEM_MCP_URL"
+# url_default = "http://filesystem-mcp:8080/mcp"
+# enabled = false

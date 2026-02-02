@@ -1,0 +1,170 @@
+[project]
+name = "agentic-ai-playground"
+version = "0.1.0"
+description = "Local-first agent playground and toolkit workspace"
+readme = "README.md"
+authors = [
+    { name = "Agentic AI Playground Contributors", email = "contributors@example.com" }
+]
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.9.22,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+agent-toolkit = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "ipdb>=0.13.13",
+    "ipython>=8.0",
+    "pytest-asyncio>=1.3.0",
+]
+
+test = [
+    "pytest>=9.0.2",
+    "pytest-cov>=6.0.0",
+    "pytest-asyncio>=0.25.0",
+]
+
+lint = [
+    "ruff>=0.14.11",
+    "pre-commit>=4.5.0",
+    "bandit[toml]>=1.8.3",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["packages"]
+addopts = ["--import-mode=importlib"]
+asyncio_mode = "auto"
+markers = [
+    "unit: Fast, isolated unit tests",
+    "integration: Tests that integrate multiple components",
+]
+filterwarnings = ["error"]
+xfail_strict = true
+strict_markers = true
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E4", "E7", "E9",
+    "F",
+    "I",
+    "UP",
+    "B",
+    "SIM",
+    "C90",
+    "A",
+    "COM",
+    "PTH",
+    "RUF",
+    "PL",
+    "TRY",
+    "PERF",
+    "FURB",
+    "S",
+    "PT",
+    "D",
+    "TCH",
+    "C4",
+    "T10",
+    "T20",
+    "RET",
+    "PIE",
+    "RSE",
+    "EM",
+    "FLY",
+    "LOG",
+    "G",
+    "BLE",
+    "N",
+    "ISC",
+    "SLF",
+    "ARG",
+    "ERA",
+    "DTZ",
+]
+ignore = [
+    "E501",
+    "COM812",
+    "PLR0913",
+    "PLR2004",
+    "TRY003",
+    "TRY300",  # Allow return in try block
+    "D100",
+    "D104",
+    "D105",
+    "D107",
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.ruff.lint.pylint]
+max-args = 8
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/*.py" = [
+    "D",
+    "PLR2004",
+    "S101",
+    "PLR0915",
+    "PLC0415",
+    "PERF203",
+    "S105",
+    "S106",
+    "S108",
+    "S311",
+    "S603",
+    "S607",
+    "EM",
+    "BLE001",
+    "RET504",
+    "ARG001",
+    "ARG002",  # Allow unused method arguments in test fixtures
+    "S604",    # Allow shell=True in test fixtures (false positive on shell param)
+    "TC002",   # Allow non-type-checking imports in tests
+    "TC003",   # Allow stdlib imports outside TYPE_CHECKING in tests
+]
+"scripts/**/*.py" = [
+    "T201",    # Allow print statements in CLI scripts
+    "D101",    # Allow missing docstrings in classes
+    "D103",    # Allow missing docstrings in functions
+    "PLR0912", # Allow many branches in CLI commands
+    "PLR0915", # Allow many statements in CLI commands
+    "C901",    # Allow complex functions in CLI scripts
+    "TRY300",  # Allow return in try block
+    "S603",    # Allow subprocess calls
+    "S607",    # Allow partial paths
+]
+# FastAPI routes need runtime imports for Pydantic models
+"frontend/backend/src/**/routes/**/*.py" = [
+    "TC001",   # Pydantic models must be runtime imports
+]
+# Config loader needs Path at runtime for file operations
+"packages/agent_toolkit/src/agent_toolkit/config/loader.py" = [
+    "TC003",   # Path is used at runtime
+]
+
+[tool.ruff.format]
+quote-style = "double"
+docstring-code-format = true
+
+[tool.bandit]
+exclude_dirs = [".venv", "**/tests/**"]
+skips = ["B101"]
+
+[tool.uv.workspace]
+members = [
+    "packages/agent_toolkit",
+    "frontend/backend",
+]

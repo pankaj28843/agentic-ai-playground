@@ -1,0 +1,76 @@
+# Model Provider Configuration
+# Defines available model providers and their models
+
+[providers.bedrock]
+type = "bedrock"
+region = "us-east-1"
+default = true
+
+[providers.bedrock.models.nova-pro]
+model_id = "us.amazon.nova-pro-v1:0"
+temperature = 0.7
+
+[providers.bedrock.models.nova-lite]
+model_id = "us.amazon.nova-lite-v1:0"
+temperature = 0.7
+
+[providers.bedrock.models.nova-micro]
+model_id = "us.amazon.nova-micro-v1:0"
+temperature = 0.7
+
+[providers.bedrock.models.nova-premier]
+model_id = "amazon.nova-premier-v1:0"
+temperature = 0.5
+
+[providers.bedrock.models.claude-sonnet]
+model_id = "anthropic.claude-sonnet-4-20250514-v1:0"
+temperature = 0.7
+
+[providers.bedrock.models.claude-haiku]
+model_id = "anthropic.claude-haiku-4-5-20251001-v1:0"
+temperature = 0.7
+
+[providers.bedrock.models.claude-opus]
+model_id = "anthropic.claude-opus-4-5-20251101-v1:0"
+temperature = 0.5
+
+# EU region variants
+[providers.bedrock-eu]
+type = "bedrock"
+region = "eu-west-1"
+
+[providers.bedrock-eu.models.nova-lite]
+model_id = "eu.amazon.nova-lite-v1:0"
+temperature = 0.7
+
+[providers.bedrock-eu.models.nova-micro]
+model_id = "eu.amazon.nova-micro-v1:0"
+temperature = 0.7
+
+# Anthropic direct API (optional)
+# Uncomment to use direct Anthropic API instead of Bedrock
+# [providers.anthropic]
+# type = "anthropic"
+# api_key_env = "ANTHROPIC_API_KEY"
+#
+# [providers.anthropic.models.claude-sonnet]
+# model_id = "claude-sonnet-4-20250514"
+# temperature = 0.7
+
+# OpenAI (optional)
+# [providers.openai]
+# type = "openai"
+# api_key_env = "OPENAI_API_KEY"
+#
+# [providers.openai.models.gpt-4o]
+# model_id = "gpt-4o"
+# temperature = 0.7
+
+# Ollama (local models - optional)
+# [providers.ollama]
+# type = "ollama"
+# extra = { host = "http://ollama:11434" }
+#
+# [providers.ollama.models.llama3]
+# model_id = "llama3"
+# temperature = 0.7

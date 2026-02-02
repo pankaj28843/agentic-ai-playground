@@ -1,0 +1,93 @@
+services:
+  web:
+    develop:
+      watch:
+        # Source sync - vite build --watch detects changes automatically
+        - action: sync
+          path: ../frontend/apps
+          target: /workspace/frontend/apps
+          initial_sync: true
+          ignore:
+            - "**/node_modules/"
+            - "**/dist/"
+            - "**/.vite/"
+            - "**/.turbo/"
+            - "**/.next/"
+            - "**/coverage/"
+        - action: sync
+          path: ../frontend/packages
+          target: /workspace/frontend/packages
+          initial_sync: true
+          ignore:
+            - "**/node_modules/"
+            - "**/dist/"
+            - "**/.turbo/"
+            - "**/.next/"
+            - "**/coverage/"
+
+        # Dependency / build metadata changes require image rebuild
+        - action: rebuild
+          path: ../frontend/package.json
+        - action: rebuild
+          path: ../frontend/pnpm-lock.yaml
+        - action: rebuild
+          path: ../frontend/pnpm-workspace.yaml
+        - action: rebuild
+          path: ../frontend/apps/web/package.json
+        - action: rebuild
+          path: ../frontend/packages/api-client/package.json
+        - action: rebuild
+          path: ../frontend/packages/assistant-runtime/package.json
+        - action: rebuild
+          path: ../frontend/vitest.config.ts
+        - action: rebuild
+          path: ../frontend/eslint.config.js
+        - action: rebuild
+          path: ../frontend/.prettierrc.json
+        - action: rebuild
+          path: ../frontend/.prettierignore
+        - action: rebuild
+          path: ../frontend/Dockerfile.web
+        - action: rebuild
+          path: ../frontend/.dockerignore
+
+  api:
+    develop:
+      watch:
+        # Source sync for backend + toolkit
+        - action: sync+restart
+          path: ../frontend/backend
+          target: /workspace/frontend/backend
+          initial_sync: true
+          ignore:
+            - "**/__pycache__/"
+            - "**/*.pyc"
+            - "**/.pytest_cache/"
+            - "**/.mypy_cache/"
+            - "**/.ruff_cache/"
+            - "**/.venv/"
+        - action: sync+restart
+          path: ../packages/agent_toolkit
+          target: /workspace/packages/agent_toolkit
+          initial_sync: true
+          ignore:
+            - "**/__pycache__/"
+            - "**/*.pyc"
+            - "**/.pytest_cache/"
+            - "**/.mypy_cache/"
+            - "**/.ruff_cache/"
+            - "**/.venv/"
+
+        # Dependency / build metadata changes require image rebuild
+        - action: rebuild
+          path: ../pyproject.toml
+        - action: rebuild
+          path: ../uv.lock
+        - action: rebuild
+          path: ../frontend/backend/pyproject.toml
+        - action: rebuild
+          path: ../packages/agent_toolkit/pyproject.toml
+        - action: rebuild
+          path: ../frontend/Dockerfile.api
+        - action: rebuild
+          path: ../frontend/.dockerignore

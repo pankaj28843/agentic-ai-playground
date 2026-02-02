@@ -1,0 +1,88 @@
+@layer components {
+  .markdown {
+    font-family: inherit;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .markdownPre {
+    font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.85em;
+    overflow-x: auto;
+    max-width: 100%;
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 4px 0;
+  }
+
+  .markdownPre code {
+    background: transparent;
+    padding: 0;
+    word-break: normal;
+  }
+
+  .markdownCodeBlock {
+    background: transparent;
+    padding: 0;
+    word-break: normal;
+  }
+
+  .markdownInlineCode {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.85em;
+    background: var(--surface-2);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  /* Code block header with language and copy button */
+  .codeHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: #1e293b;
+    border-radius: 8px 8px 0 0;
+    margin-top: 12px;
+    font-size: 0.75rem;
+  }
+
+  .codeLanguage {
+    color: #94a3b8;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    text-transform: lowercase;
+  }
+
+  .codeCopyBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 8px;
+    background: transparent;
+    border: 1px solid #475569;
+    border-radius: 4px;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .codeCopyBtn:hover {
+    background: #334155;
+    color: #e2e8f0;
+    border-color: #64748b;
+  }
+
+  .codeCopyBtn:active {
+    transform: scale(0.95);
+  }
+
+  /* Override pre styling when using syntax highlighter */
+  .markdown .codeHeader + div pre,
+  .markdown .codeHeader + pre {
+    margin-top: 0 !important;
+    border-radius: 0 0 8px 8px !important;
+  }
+}

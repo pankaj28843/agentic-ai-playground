@@ -1,0 +1,74 @@
+@layer components {
+  .threadNotFound {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    height: 100%;
+    min-height: 300px;
+    text-align: center;
+    padding: 32px;
+  }
+
+  .threadNotFoundIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(216, 124, 116, 0.15);
+    color: #d87c74;
+  }
+
+  .threadNotFoundIcon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .threadNotFoundTitle {
+    font-family: "Space Grotesk", system-ui, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .threadNotFoundText {
+    color: var(--muted);
+    font-size: 0.95rem;
+    max-width: 320px;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .threadNotFoundButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+    margin-top: 8px;
+  }
+
+  .threadNotFoundButton:hover {
+    background: #164059;
+  }
+
+  .threadNotFoundButton:active {
+    transform: scale(0.98);
+  }
+
+  .threadNotFoundButton svg {
+    width: 18px;
+    height: 18px;
+  }
+}

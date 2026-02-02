@@ -1,0 +1,31 @@
+{
+  "name": "agentic-ai-playground-frontend",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.4.0",
+  "scripts": {
+    "dev": "pnpm -C apps/web dev",
+    "build": "pnpm -C apps/web build",
+    "preview": "pnpm -C apps/web preview",
+    "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,css,html,json,md}\" \"packages/**/*.{ts,tsx,css,json,md}\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,css,html,json,md}\" \"packages/**/*.{ts,tsx,css,json,md}\"",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.19.0",
+    "@types/node": "^22.10.1",
+    "@playwright/test": "^1.50.1",
+    "@typescript-eslint/eslint-plugin": "^8.18.2",
+    "@typescript-eslint/parser": "^8.18.2",
+    "eslint": "^9.19.0",
+    "eslint-plugin-react": "^7.37.3",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.18",
+    "prettier": "^3.5.0",
+    "typescript-eslint": "^8.18.2",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Git pre-push hook
+# Runs validation checks before allowing push.
+# Install with: cp scripts/hooks/pre-push .git/hooks/pre-push
+
+exec ./scripts/pre-push-checks.sh

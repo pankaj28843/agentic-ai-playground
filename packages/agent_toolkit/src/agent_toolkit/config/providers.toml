@@ -1,0 +1,22 @@
+# Bundled default model providers configuration.
+# External providers.toml (in PLAYGROUND_CONFIG_DIR) will override this entirely.
+
+[providers.bedrock]
+type = "bedrock"
+region = "us-east-1"
+default = true
+
+[providers.bedrock.models.nova-lite]
+model_id = "us.amazon.nova-lite-v1:0"
+temperature = 0.7
+max_tokens = 4096
+
+[providers.bedrock.models.nova-micro]
+model_id = "us.amazon.nova-micro-v1:0"
+temperature = 0.7
+max_tokens = 4096
+
+[providers.bedrock.models.nova-pro]
+model_id = "us.amazon.nova-pro-v1:0"
+temperature = 0.7
+max_tokens = 8000

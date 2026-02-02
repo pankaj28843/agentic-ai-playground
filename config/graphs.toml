@@ -1,0 +1,58 @@
+# Graph Templates for Multi-Agent Orchestration
+# Each graph defines nodes (referencing atomic agents), edges, entry points, and timeouts
+# Nodes inherit model config from their profiles, but can override here
+
+[graphs.quick_graph]
+description = "Single-agent graph for quick responses"
+entry_point = "assistant"
+nodes = [
+  { name = "assistant", agent = "general" },
+]
+edges = []
+timeouts = { execution = 300, node = 180 }
+
+[graphs.research_graph]
+description = "Two-stage research pipeline with parallel research and optimization"
+entry_point = "researcher"
+nodes = [
+  { name = "researcher", agent = "parallel_researcher" },
+  { name = "optimizer", agent = "context_optimized" },
+]
+edges = [
+  { from = "researcher", to = "optimizer" },
+]
+timeouts = { execution = 900, node = 450 }
+
+[graphs.expert_graph]
+description = "Four-stage expert analysis pipeline with planning, research, validation, and synthesis"
+entry_point = "planner"
+nodes = [
+  { name = "planner", agent = "planner" },
+  { name = "researcher", agent = "deep_researcher" },
+  { name = "checker", agent = "fact_checker" },
+  { name = "synthesizer", agent = "synthesizer" },
+]
+edges = [
+  { from = "planner", to = "researcher" },
+  { from = "researcher", to = "checker" },
+  { from = "checker", to = "synthesizer" },
+]
+timeouts = { execution = 1800, node = 600 }
+
+# Advanced parallel graph with fan-out/fan-in pattern
+[graphs.parallel_analysis_graph]
+description = "Parallel analysis with multiple researchers feeding into synthesizer"
+entry_point = "planner"
+nodes = [
+  { name = "planner", agent = "planner", model_override = "bedrock.nova-lite" },
+  { name = "tech_researcher", agent = "deep_researcher" },
+  { name = "context_researcher", agent = "parallel_researcher" },
+  { name = "synthesizer", agent = "synthesizer" },
+]
+edges = [
+  { from = "planner", to = "tech_researcher" },
+  { from = "planner", to = "context_researcher" },
+  { from = "tech_researcher", to = "synthesizer" },
+  { from = "context_researcher", to = "synthesizer" },
+]
+timeouts = { execution = 1500, node = 500 }

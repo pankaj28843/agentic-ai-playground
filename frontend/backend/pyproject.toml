@@ -1,0 +1,26 @@
+[project]
+name = "assistant-web-backend"
+version = "0.1.0"
+description = "Backend API for the Assistant UI web playground"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.115.0",
+    "pydantic>=2.8.0",
+    "python-dotenv>=1.0.1",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=0.25.0",
+    "uvicorn>=0.30.0",
+    "agent-toolkit",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.22,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+agent-toolkit = { workspace = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

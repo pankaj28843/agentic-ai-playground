@@ -1,0 +1,62 @@
+# ============================================================================
+# Stage 1: Dependencies - cached unless lock file changes
+# ============================================================================
+FROM python:3.13-slim AS deps
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /workspace
+ENV PYTHONUNBUFFERED=1
+ENV UV_LINK_MODE=copy
+
+# Copy ONLY dependency metadata first (for optimal layer caching)
+# Root workspace files
+COPY pyproject.toml uv.lock ./
+
+# ALL workspace member pyproject.toml files (required for workspace resolution)
+COPY packages/agent_toolkit/pyproject.toml ./packages/agent_toolkit/
+COPY frontend/backend/pyproject.toml ./frontend/backend/
+
+# Install dependencies only for the backend package (not the projects themselves)
+# Uses cache mount for faster rebuilds
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-install-workspace --package assistant-web-backend
+
+# ============================================================================
+# Stage 2: Development - with reload for HMR-like experience
+# ============================================================================
+FROM deps AS development
+
+# Copy actual source code (changes frequently - compose watch handles sync during dev)
+COPY packages/agent_toolkit ./packages/agent_toolkit
+COPY frontend/backend ./frontend/backend
+COPY config ./config
+
+# Sync again to install only the backend and its workspace deps (agent-toolkit)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --package assistant-web-backend
+
+WORKDIR /workspace/frontend/backend
+
+# Run with --reload for development (auto-restart on file changes)
+CMD uv run uvicorn assistant_web_backend.main:app --host ${UVICORN_HOST} --port 10001 --reload
+
+# ============================================================================
+# Stage 3: Production runtime - no reload, optimized for stability
+# ============================================================================
+FROM deps AS runtime
+
+# Copy actual source code
+COPY packages/agent_toolkit ./packages/agent_toolkit
+COPY frontend/backend ./frontend/backend
+COPY config ./config
+
+# Sync again to install only the backend and its workspace deps (agent-toolkit)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --package assistant-web-backend
+
+WORKDIR /workspace/frontend/backend
+
+# Run without --reload for production (stable, no file watching overhead)
+CMD uv run uvicorn assistant_web_backend.main:app --host ${UVICORN_HOST} --port 10001

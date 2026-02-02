@@ -1,0 +1,20 @@
+# Compose override for logging configuration
+# Configures json-file logging with rotation settings
+# Use with: docker compose -f compose.yaml -f compose.logs.yaml up
+
+services:
+  web:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"
+
+  api:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+        compress: "true"

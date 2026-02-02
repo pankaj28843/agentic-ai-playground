@@ -1,0 +1,83 @@
+# Frontend compose stack
+# Run via: uv run python scripts/restart_frontend_compose.py
+# The script loads .env from repo root and resolves PLAYGROUND_CONFIG_DIR to absolute path
+
+services:
+  nginx:
+    restart: always
+    image: nginx:alpine
+    ports:
+      - "10002:10002"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web
+      - api
+    environment:
+      - TZ=UTC
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://nginx:10002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  web:
+    restart: always
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile.web
+      target: development
+    expose:
+      - "10000"
+    environment:
+      - TZ=UTC
+      - VITE_HOST=${VITE_HOST:?VITE_HOST is required}
+      # API calls go through nginx - empty base URL means use same origin (paths already include /api)
+      - VITE_API_BASE_URL=
+      # Allowed hosts for Vite dev server (comma-separated) - required when behind nginx proxy
+      - VITE_ALLOWED_HOSTS=${VITE_ALLOWED_HOSTS:-}
+
+  api:
+    restart: always
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile.api
+      target: development
+    expose:
+      - "10001"
+    environment:
+      - TZ=UTC
+      - UVICORN_HOST=${UVICORN_HOST:?UVICORN_HOST is required}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION}
+      - BEDROCK_MODEL_ID=${BEDROCK_MODEL_ID}
+      - RUN_MODE=${RUN_MODE}
+      # Inside container, code reads from PLAYGROUND_CONFIG_DIR (the mount path)
+      - PLAYGROUND_CONFIG_DIR=/workspace/config
+      - TECHDOCS_MCP_URL=${TECHDOCS_MCP_URL:?TECHDOCS_MCP_URL is required}
+      # Phoenix telemetry - disabled by default; enable explicitly (e.g. in production)
+      - PHOENIX_ENABLED=${PHOENIX_ENABLED:-false}
+      - PHOENIX_COLLECTOR_ENDPOINT=${PHOENIX_COLLECTOR_ENDPOINT:-}
+      - PHOENIX_PUBLIC_URL=${PHOENIX_PUBLIC_URL:-}
+      - PHOENIX_GRPC_PORT=${PHOENIX_GRPC_PORT:-4317}
+      - PHOENIX_PROJECT_NAME=${PHOENIX_PROJECT_NAME:-agentic-ai-playground}
+      # Online evaluation - disabled by default
+      - ONLINE_EVAL_ENABLED=${ONLINE_EVAL_ENABLED:-false}
+      - ONLINE_EVAL_MODEL=${ONLINE_EVAL_MODEL:-bedrock/eu.amazon.nova-micro-v1:0}
+      - ONLINE_EVAL_TEMPERATURE=${ONLINE_EVAL_TEMPERATURE:-0.0}
+      - ONLINE_EVAL_MAX_TOKENS=${ONLINE_EVAL_MAX_TOKENS:-256}
+      - ONLINE_EVAL_SAMPLE_RATE=${ONLINE_EVAL_SAMPLE_RATE:-0.1}
+      # CORS origin - set to the public HTTPS URL for production
+      - WEB_ORIGIN=${WEB_ORIGIN:?WEB_ORIGIN is required}
+      - WEB_ALLOWED_ORIGINS=${WEB_ALLOWED_ORIGINS:-}
+      - WEB_STORAGE_DIR=/data
+      - SESSION_STORAGE_DIR=/data/sessions
+      - CONVERSATION_MANAGER=${CONVERSATION_MANAGER:-summarizing}
+      - MAX_CONTEXT_TOKENS=${MAX_CONTEXT_TOKENS:-300000}
+    volumes:
+      - ../.data/assistant-web:/data
+      - ../.data/sessions:/data/sessions
+      # Config volume: host path (PLAYGROUND_CONFIG_DIR) → container path (/workspace/config)
+      # PLAYGROUND_CONFIG_DIR must be set in .env (e.g., ./config for repo, /opt/configs for external)
+      - ${PLAYGROUND_CONFIG_DIR:?PLAYGROUND_CONFIG_DIR is required}:/workspace/config:ro
