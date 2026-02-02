@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Local-first agent playground and toolkit workspace"
 readme = "README.md"
 authors = [
-    { name = "Agentic AI Playground Contributors", email = "contributors@example.com" }
+    { name = "Pankaj Kumar Singh", email = "pankaj28843@gmail.com" }
 ]
 requires-python = ">=3.13"
 dependencies = []
