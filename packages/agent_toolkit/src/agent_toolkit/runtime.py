@@ -28,6 +28,7 @@ from agent_toolkit.config import (
     load_settings,
 )
 from agent_toolkit.config.execution_mode import get_execution_mode_resolver
+from agent_toolkit.config.new_loader import NewConfigLoader
 from agent_toolkit.config.swarm_presets import load_swarm_presets
 from agent_toolkit.execution import (
     ExecutionContext,
@@ -36,6 +37,7 @@ from agent_toolkit.execution import (
     SwarmStrategy,
 )
 from agent_toolkit.hooks import (
+    PlanModeHook,
     TechDocsWorkflowHook,
     ToolApprovalHook,
     ToolTelemetry,
@@ -45,6 +47,7 @@ from agent_toolkit.mcp.client_resolver import get_mcp_clients_for_profile
 from agent_toolkit.metrics import extract_metrics_from_event
 from agent_toolkit.models.runtime import RuntimeAgent
 from agent_toolkit.multiagent import build_graph, build_swarm
+from agent_toolkit.plan_mode import PlanModeSettings
 from agent_toolkit.run_history import new_run_id
 from agent_toolkit.snapshot_recorder import (
     build_tool_events_from_telemetry,
@@ -59,6 +62,7 @@ from agent_toolkit.stream_utils import (
 )
 from agent_toolkit.telemetry import SessionTurnContext, build_trace_attributes, setup_telemetry
 from agent_toolkit.tools import DEFAULT_TOOL_REGISTRY
+from agent_toolkit.tools.subagents import subagent  # noqa: F401 - registers tool
 from agent_toolkit.utils import utc_timestamp
 
 logger = logging.getLogger(__name__)
@@ -145,15 +149,22 @@ class AgentRuntime:
         invocation_state: dict[str, str] | None = None,
         execution_mode: str = "",
         entrypoint_reference: str = "",
+        model_override: str | None = None,
+        tool_groups_override: list[str] | None = None,
     ) -> RuntimeAgent:
         """Create a runtime agent for a given profile."""
         profile = self._profiles.get(profile_name)
         if profile is None:
             message = f"Unknown agent profile: {profile_name}"
             raise ValueError(message)
+        profile = self._apply_profile_overrides(profile, model_override, tool_groups_override)
 
         telemetry = ToolTelemetry()
         hooks = [ToolTelemetryHook(telemetry)]
+        plan_mode = PlanModeSettings.from_metadata(profile.metadata)
+        if plan_mode.enabled:
+            hooks.append(PlanModeHook(plan_mode))
+
         if self._settings.approval_tools:
             hooks.append(ToolApprovalHook(self._settings.approval_tools))
 
@@ -189,6 +200,63 @@ class AgentRuntime:
         )
         return RuntimeAgent(profile=profile, agent=agent, telemetry=telemetry)
 
+    def _apply_profile_overrides(
+        self,
+        profile: AgentProfile,
+        model_override: str | None,
+        tool_groups_override: list[str] | None,
+    ) -> AgentProfile:
+        if not model_override and tool_groups_override is None:
+            return profile
+
+        updates: dict[str, Any] = {}
+        if model_override:
+            updates["model"] = model_override
+
+        if tool_groups_override is not None:
+            tools = self._build_tools_for_profile(profile.name, tool_groups_override)
+            updates["tools"] = tools
+            updates["tool_groups"] = list(tool_groups_override)
+
+        if not updates:
+            return profile
+
+        return profile.model_copy(update=updates)
+
+    def apply_profile_overrides(
+        self,
+        profile: AgentProfile,
+        model_override: str | None,
+        tool_groups_override: list[str] | None,
+    ) -> AgentProfile:
+        """Return a copy of the profile with overrides applied."""
+        return self._apply_profile_overrides(profile, model_override, tool_groups_override)
+
+    def _build_tools_for_profile(self, profile_name: str, tool_groups: list[str]) -> list[str]:
+        loader = NewConfigLoader()
+        schema, validation = loader.load()
+        if not validation.valid:
+            msg = f"Configuration validation failed: {validation.errors}"
+            raise ValueError(msg)
+
+        agent = schema.agents.get(profile_name)
+        if not agent:
+            return []
+
+        all_tools = list(agent.tools)
+        for group_name in tool_groups:
+            group = schema.tool_groups.get(group_name)
+            if group:
+                all_tools.extend(group.tools)
+
+        seen: set[str] = set()
+        unique_tools: list[str] = []
+        for tool in all_tools:
+            if tool not in seen:
+                unique_tools.append(tool)
+                seen.add(tool)
+        return unique_tools
+
     def run(
         self,
         mode: str,
@@ -196,6 +264,9 @@ class AgentRuntime:
         prompt: str,
         invocation_state: dict[str, str],
         session_id: str,
+        *,
+        model_override: str | None = None,
+        tool_groups_override: list[str] | None = None,
     ) -> object:
         """Run a request based on the selected mode (sync, non-streaming)."""
         ctx = ExecutionContext(
@@ -203,6 +274,8 @@ class AgentRuntime:
             profile_name=profile_name,
             session_id=session_id,
             invocation_state=invocation_state,
+            model_override=model_override,
+            tool_groups_override=tool_groups_override,
         )
         run_id = new_run_id()
         started_at = utc_timestamp()
@@ -253,6 +326,8 @@ class AgentRuntime:
                 invocation_state=ctx.invocation_state,
                 execution_mode=execution_mode,
                 entrypoint_reference=entrypoint_reference,
+                model_override=ctx.model_override,
+                tool_groups_override=ctx.tool_groups_override,
             )
             result = runtime_agent.agent(prompt)
             tool_events = build_tool_events_from_telemetry(runtime_agent.telemetry)
@@ -277,6 +352,9 @@ class AgentRuntime:
         messages: list[dict[str, Any]],
         invocation_state: dict[str, str],
         session_id: str,
+        *,
+        model_override: str | None = None,
+        tool_groups_override: list[str] | None = None,
     ):
         """Stream a request based on the selected mode.
 
@@ -289,12 +367,16 @@ class AgentRuntime:
             messages: Full conversation history in Strands message format
             invocation_state: State to pass to the agent
             session_id: Session ID for persistence
+            model_override: Optional model override for this run.
+            tool_groups_override: Optional tool group override for this run.
         """
         ctx = ExecutionContext(
             mode=mode,
             profile_name=profile_name,
             session_id=session_id,
             invocation_state=invocation_state,
+            model_override=model_override,
+            tool_groups_override=tool_groups_override,
         )
         run_id = new_run_id()
         started_at = utc_timestamp()
@@ -419,6 +501,8 @@ class AgentRuntime:
 
         if execution_mode == "swarm":
             logger.info("Building swarm with template: %s", entrypoint_reference)
+            if ctx.model_override or ctx.tool_groups_override is not None:
+                logger.warning("Model/tool overrides are not applied to swarm executions")
             swarm = build_swarm(
                 self._settings,
                 session_manager=None,
@@ -430,6 +514,8 @@ class AgentRuntime:
 
         if execution_mode == "graph":
             logger.info("Building graph with template: %s", entrypoint_reference)
+            if ctx.model_override or ctx.tool_groups_override is not None:
+                logger.warning("Model/tool overrides are not applied to graph executions")
             graph = build_graph(
                 self._settings,
                 session_manager=None,
@@ -449,5 +535,7 @@ class AgentRuntime:
             invocation_state=ctx.invocation_state,
             execution_mode=execution_mode,
             entrypoint_reference=entrypoint_reference,
+            model_override=ctx.model_override,
+            tool_groups_override=ctx.tool_groups_override,
         )
         return SingleAgentStrategy(runtime_agent.agent, history_messages)

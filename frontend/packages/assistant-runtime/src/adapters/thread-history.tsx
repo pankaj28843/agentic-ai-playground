@@ -13,6 +13,7 @@ import {
 import { phoenixMetadataEvents, runtimeMetadataEvents, type RuntimeMetadata } from "@agentic-ai-playground/api-client";
 import { api } from "./chat-model";
 import { buildRepository, toApiMessage, toThreadMessage } from "../converters";
+import { getActiveSessionBranch } from "../session-branch";
 
 // Track latest Phoenix trace ID from streaming for persistence
 let latestPhoenixTraceId: string | undefined;
@@ -55,6 +56,11 @@ export const ThreadAdapterProvider = ({ children }: { children?: ReactNode }) =>
 
       async append(item: { message: ThreadMessage }) {
         const { remoteId } = await threadApi.threadListItem().initialize();
+        const activeBranch = getActiveSessionBranch();
+        const parentSessionEntryId =
+          item.message.role === "user" && activeBranch?.threadId === remoteId
+            ? activeBranch.entryId
+            : undefined;
         // For assistant messages, include the Phoenix trace ID from the stream
         const traceId = item.message.role === "assistant" ? latestPhoenixTraceId : undefined;
         const runtimeMetadata = item.message.role === "assistant" ? latestRuntimeMetadata : undefined;
@@ -64,6 +70,7 @@ export const ThreadAdapterProvider = ({ children }: { children?: ReactNode }) =>
           traceId,
           runtimeMetadata,
           latestPhoenixSessionId,
+          parentSessionEntryId,
         );
         // Clear the captured metadata after saving to avoid reusing it
         if (traceId) {

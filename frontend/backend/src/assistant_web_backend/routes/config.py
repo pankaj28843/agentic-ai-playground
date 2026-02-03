@@ -2,11 +2,26 @@
 
 from __future__ import annotations
 
+from agent_toolkit.config import load_settings
+from agent_toolkit.config.new_loader import NewConfigLoader
+from agent_toolkit.providers import load_providers
 from fastapi import APIRouter, HTTPException
 
-from assistant_web_backend.models.config import PhoenixConfigResponse
+from assistant_web_backend.models.config import (
+    PhoenixConfigResponse,
+    ProfileDefaults,
+    SettingsResponse,
+    ToolGroupSummary,
+)
 from assistant_web_backend.models.profiles import ProfilesResponse, ProfileSummary
+from assistant_web_backend.models.resources import (
+    PromptResource,
+    ResourceDiagnostics,
+    ResourcesResponse,
+    SkillResource,
+)
 from assistant_web_backend.services.phoenix import PhoenixService
+from assistant_web_backend.services.resources import load_resources
 from assistant_web_backend.services.runtime import RuntimeService
 
 router = APIRouter(prefix="/api", tags=["config"])
@@ -59,4 +74,74 @@ def list_profiles() -> ProfilesResponse:
         ],
         runModes=run_modes,
         defaultRunMode=default_run_mode,
+    )
+
+
+@router.get("/resources", response_model=ResourcesResponse)
+def list_resources() -> ResourcesResponse:
+    """List available skills and prompt templates."""
+    bundle = load_resources()
+    return ResourcesResponse(
+        skills=[
+            SkillResource(
+                name=skill.name,
+                description=skill.description,
+                content=skill.content,
+                source=skill.source,
+            )
+            for skill in bundle.skills
+        ],
+        prompts=[
+            PromptResource(
+                name=prompt.name,
+                description=prompt.description,
+                content=prompt.content,
+                source=prompt.source,
+            )
+            for prompt in bundle.prompts
+        ],
+        diagnostics=ResourceDiagnostics(warnings=bundle.diagnostics.warnings),
+    )
+
+
+@router.get("/settings", response_model=SettingsResponse)
+def list_settings() -> SettingsResponse:
+    """List settings metadata for the UI (models, tool groups, defaults)."""
+    loader = NewConfigLoader()
+    schema, validation = loader.load()
+    registry = load_providers()
+    settings = load_settings()
+
+    tool_groups = [
+        ToolGroupSummary(
+            name=group.name,
+            description=group.description,
+            tools=list(group.tools),
+            capabilities=list(group.capabilities),
+        )
+        for group in schema.tool_groups.values()
+    ]
+    profile_defaults: list[ProfileDefaults] = []
+    for profile_id, profile in schema.public_profiles.items():
+        tool_groups_for_profile: list[str] = []
+        model = None
+        if profile.entrypoint_type == "single":
+            agent = schema.agents.get(profile.entrypoint_reference)
+            if agent:
+                tool_groups_for_profile = list(agent.tool_groups)
+                model = agent.model
+        profile_defaults.append(
+            ProfileDefaults(
+                profileId=profile_id,
+                model=model,
+                toolGroups=tool_groups_for_profile,
+            )
+        )
+
+    return SettingsResponse(
+        models=sorted(registry.list_models()),
+        defaultModel=settings.bedrock_model_id,
+        toolGroups=sorted(tool_groups, key=lambda g: g.name),
+        profileDefaults=sorted(profile_defaults, key=lambda p: p.profile_id),
+        warnings=validation.warnings,
     )

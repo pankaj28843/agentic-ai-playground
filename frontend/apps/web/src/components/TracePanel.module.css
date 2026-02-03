@@ -331,6 +331,20 @@
     font-weight: 600;
   }
 
+  .traceResultToggle {
+    border: none;
+    background: transparent;
+    color: var(--accent);
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .traceResultToggle:hover {
+    text-decoration: underline;
+  }
+
   .traceCode {
     background: #0f172a;
     color: #e2e8f0;

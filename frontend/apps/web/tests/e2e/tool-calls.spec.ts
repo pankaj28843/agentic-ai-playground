@@ -86,7 +86,7 @@ test.describe("Tool calls in quick mode", () => {
     if (!resolved.hasRequestedType) {
       test.skip(true, "No single-entrypoint profile configured.");
     }
-    await page.getByRole("combobox", { name: "Mode" }).selectOption(resolved.runMode);
+    await page.getByRole("combobox", { name: "Run mode" }).selectOption(resolved.runMode);
 
     // Send a query that requires TechDocs tool calls
     const input = page.getByPlaceholder("Send a message...");
@@ -150,7 +150,7 @@ test.describe("Tool calls in quick mode", () => {
     if (!resolved.hasRequestedType) {
       test.skip(true, "No single-entrypoint profile configured.");
     }
-    await page.getByRole("combobox", { name: "Mode" }).selectOption(resolved.runMode);
+    await page.getByRole("combobox", { name: "Run mode" }).selectOption(resolved.runMode);
 
     const input = page.getByPlaceholder("Send a message...");
     await input.fill("What is Django ORM? Search TechDocs and cite your sources.");
@@ -200,7 +200,7 @@ test.describe("Tool calls in research mode", () => {
     if (!resolved.hasRequestedType) {
       test.skip(true, "No graph-entrypoint profile configured.");
     }
-    await page.getByRole("combobox", { name: "Mode" }).selectOption(resolved.runMode);
+    await page.getByRole("combobox", { name: "Run mode" }).selectOption(resolved.runMode);
 
     const input = page.getByPlaceholder("Send a message...");
     await input.fill(
@@ -256,7 +256,7 @@ test.describe("Tool calls in research mode", () => {
     if (!resolved.hasRequestedType) {
       test.skip(true, "No graph-entrypoint profile configured.");
     }
-    await page.getByRole("combobox", { name: "Mode" }).selectOption(resolved.runMode);
+    await page.getByRole("combobox", { name: "Run mode" }).selectOption(resolved.runMode);
 
     const input = page.getByPlaceholder("Send a message...");
     await input.fill(
@@ -303,7 +303,7 @@ test.describe("Tool calls in expert mode", () => {
     if (!resolved.hasRequestedType) {
       test.skip(true, "No swarm-entrypoint profile configured.");
     }
-    await page.getByRole("combobox", { name: "Mode" }).selectOption(resolved.runMode);
+    await page.getByRole("combobox", { name: "Run mode" }).selectOption(resolved.runMode);
 
     const input = page.getByPlaceholder("Send a message...");
     await input.fill(
@@ -351,7 +351,7 @@ test.describe("Trace panel functionality", () => {
     if (!resolved.hasRequestedType) {
       test.skip(true, "No single-entrypoint profile configured.");
     }
-    await page.getByRole("combobox", { name: "Mode" }).selectOption(resolved.runMode);
+    await page.getByRole("combobox", { name: "Run mode" }).selectOption(resolved.runMode);
 
     const input = page.getByPlaceholder("Send a message...");
     await input.fill("List TechDocs tenants. Just call the tool.");
@@ -397,7 +397,7 @@ test.describe("Trace panel functionality", () => {
     if (!resolved.hasRequestedType) {
       test.skip(true, "No single-entrypoint profile configured.");
     }
-    await page.getByRole("combobox", { name: "Mode" }).selectOption(resolved.runMode);
+    await page.getByRole("combobox", { name: "Run mode" }).selectOption(resolved.runMode);
 
     const input = page.getByPlaceholder("Send a message...");
     await input.fill("What is Python? Use TechDocs.");
@@ -455,7 +455,7 @@ test.describe("Complex debugging queries", () => {
     if (!resolved.hasRequestedType) {
       test.skip(true, "No single-entrypoint profile configured.");
     }
-    await page.getByRole("combobox", { name: "Mode" }).selectOption(resolved.runMode);
+    await page.getByRole("combobox", { name: "Run mode" }).selectOption(resolved.runMode);
 
     // Complex query that requires multiple tool calls
     const input = page.getByPlaceholder("Send a message...");
@@ -509,7 +509,7 @@ test.describe("Complex debugging queries", () => {
     if (!resolved.hasRequestedType) {
       test.skip(true, "No graph-entrypoint profile configured.");
     }
-    await page.getByRole("combobox", { name: "Mode" }).selectOption(resolved.runMode);
+    await page.getByRole("combobox", { name: "Run mode" }).selectOption(resolved.runMode);
 
     // Query about agentic patterns - tests if TechDocs has relevant info
     const input = page.getByPlaceholder("Send a message...");

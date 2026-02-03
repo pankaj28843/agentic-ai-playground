@@ -1,0 +1,198 @@
+@layer components {
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .panelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .panelEyebrow {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .panelTitle {
+    font-size: 0.85rem;
+    margin: 2px 0 0;
+  }
+
+  .panelRefresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    cursor: pointer;
+  }
+
+  .panelRefresh svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .panelHint {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .tree {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .nodeWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .nodeRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    padding: 6px 8px;
+    padding-left: calc(8px + (var(--depth) * 14px));
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .nodeActive {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent-soft);
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface-2));
+  }
+
+  .nodeChevron {
+    width: 12px;
+    height: 12px;
+    color: var(--muted);
+  }
+
+  .nodeContent {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .nodeTitle {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nodeMeta {
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  .nodeAction {
+    align-self: flex-start;
+    margin-left: calc(20px + (var(--depth) * 14px));
+    border: none;
+    background: none;
+    color: var(--accent);
+    font-size: 0.7rem;
+    cursor: pointer;
+  }
+
+  .activePanel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  .activeHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .activeEyebrow {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0;
+  }
+
+  .activeTitle {
+    font-size: 0.8rem;
+    margin: 2px 0 0;
+  }
+
+  .activeClear {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.65rem;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+
+  .activeClear svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .labelRow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .labelRow input {
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    padding: 6px 8px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 0.75rem;
+  }
+
+  .labelSave {
+    align-self: flex-start;
+    border-radius: 999px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: white;
+    font-size: 0.7rem;
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+}

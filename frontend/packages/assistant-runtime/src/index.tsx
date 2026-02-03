@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AssistantRuntimeProvider as RuntimeProvider,
   unstable_useRemoteThreadListRuntime as useRemoteThreadListRuntime,
@@ -10,6 +10,8 @@ import {
 
 import { ApiClient } from "@agentic-ai-playground/api-client";
 import { createChatAdapter, threadListAdapter } from "./adapters";
+import type { RunOverrides } from "./types";
+export { getActiveSessionBranch, setActiveSessionBranch, subscribeSessionBranch } from "./session-branch";
 
 // Re-export converters for external use
 export { toApiMessage, toThreadMessage, buildRepository } from "./converters";
@@ -19,24 +21,18 @@ const baseUrl =
 
 const api = new ApiClient(baseUrl);
 
-const useLocalRuntimeAdapter = (runMode?: string) =>
-  useLocalRuntime(createChatAdapter(runMode));
-
-const useRuntimeHook = (runMode?: string) => {
-  return useLocalRuntimeAdapter(runMode);
-};
-
 export const AssistantRuntimeProvider = ({
   children,
   runMode,
+  runOverrides,
 }: {
   children: ReactNode;
   runMode?: string;
+  runOverrides?: RunOverrides;
 }) => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks -- runtimeHook is called by useRemoteThreadListRuntime as a hook factory
-  const runtimeHook = useCallback(() => useRuntimeHook(runMode), [runMode]);
   const runtime = useRemoteThreadListRuntime({
-    runtimeHook,
+    // eslint-disable-next-line react-hooks/rules-of-hooks -- hook factory invoked by useRemoteThreadListRuntime
+    runtimeHook: () => useLocalRuntime(createChatAdapter(runMode, runOverrides)),
     adapter: threadListAdapter,
   });
 
@@ -206,3 +202,5 @@ export const useThreadRouterSync = (
     threadNotFound,
   };
 };
+
+export type { RunOverrides };

@@ -153,6 +153,8 @@ async def _run_stream(  # noqa: C901, PLR0912
             messages=strands_messages,
             invocation_state=invocation_state,
             session_id=thread_id or f"thread-{run_mode}",
+            model_override=payload.model_override,
+            tool_groups_override=payload.tool_groups_override,
         ):
             # Capture Phoenix metadata from any event (not just stream_metadata)
             trace_id_from_event = _extract_phoenix_metadata(event)

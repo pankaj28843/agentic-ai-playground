@@ -1,6 +1,6 @@
 import { ArrowRight, Brain, ChevronDown, ChevronRight, Clock, ExternalLink, User, Users, Wrench, X } from "lucide-react";
 import type { FC } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
 import "highlight.js/styles/github-dark.css";
@@ -17,6 +17,8 @@ export type TraceItem =
       toolName: string;
       args: Record<string, unknown>;
       result?: unknown;
+      resultFull?: unknown;
+      resultTruncated?: boolean;
       status: string;
       isError?: boolean;
       timestamp?: string;
@@ -96,6 +98,19 @@ export const TracePanel: FC<TracePanelProps> = ({
   expandedItems,
   onToggleExpanded,
 }) => {
+  const [fullOutputItems, setFullOutputItems] = useState<Set<number>>(new Set());
+
+  const toggleFullOutput = (index: number) => {
+    setFullOutputItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
   // Sort items chronologically by timestamp
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
@@ -223,6 +238,8 @@ export const TracePanel: FC<TracePanelProps> = ({
                 startTime={startTime}
                 expanded={expandedItems.has(index)}
                 onToggle={() => onToggleExpanded(index)}
+                showFullOutput={fullOutputItems.has(index)}
+                onToggleFullOutput={() => toggleFullOutput(index)}
               />
             ))
           )}
@@ -268,7 +285,9 @@ const TraceItemView: FC<{
   startTime?: string;
   expanded: boolean;
   onToggle: () => void;
-}> = ({ item, startTime, expanded, onToggle }) => {
+  showFullOutput: boolean;
+  onToggleFullOutput: () => void;
+}> = ({ item, startTime, expanded, onToggle, showFullOutput, onToggleFullOutput }) => {
   const elapsed = formatElapsed(startTime, item.timestamp);
 
   if (item.type === "thinking") {
@@ -411,7 +430,8 @@ const TraceItemView: FC<{
     return formatted.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
   };
 
-  const resultText = item.result !== undefined ? formatResult(item.result) : null;
+  const resolvedResult = showFullOutput && item.resultFull !== undefined ? item.resultFull : item.result;
+  const resultText = resolvedResult !== undefined ? formatResult(resolvedResult) : null;
   const toolStatusClass =
     item.status === "complete"
       ? styles.traceItemStatusComplete
@@ -455,6 +475,15 @@ const TraceItemView: FC<{
           {resultText && (
             <div className={styles.traceSection}>
               <span className={styles.traceSectionLabel}>Result</span>
+              {item.resultTruncated && item.resultFull !== undefined && (
+                <button
+                  type="button"
+                  className={styles.traceResultToggle}
+                  onClick={onToggleFullOutput}
+                >
+                  {showFullOutput ? "Show truncated" : "Show full output"}
+                </button>
+              )}
               <HighlightedCode code={resultText} className={styles.traceResult} />
             </div>
           )}

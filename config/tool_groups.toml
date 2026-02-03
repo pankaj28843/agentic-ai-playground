@@ -5,6 +5,11 @@ description = "TechDocs MCP - tools discovered from remote server"
 tools = []  # Tools come directly from MCP server: find_tenant, list_tenants, describe_tenant, root_search, root_fetch, root_browse
 capabilities = ["read", "mcp:techdocs"]
 
+[tool_groups.subagents]
+description = "Subagent orchestration tools"
+tools = ["subagent"]
+capabilities = ["delegate"]
+
 # Strands Tools Groups - pre-built tools from strands-agents-tools package
 # These are "strands:" prefixed to distinguish from local tools
 

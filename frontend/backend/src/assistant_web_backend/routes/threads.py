@@ -14,6 +14,11 @@ from assistant_web_backend.models.messages import (
     TitleRequest,
     TitleResponse,
 )
+from assistant_web_backend.models.sessions import (
+    SessionLabelRequest,
+    SessionLabelResponse,
+    SessionTreeResponse,
+)
 from assistant_web_backend.models.threads import (
     ThreadCreateResponse,
     ThreadDetailResponse,
@@ -22,6 +27,11 @@ from assistant_web_backend.models.threads import (
     ThreadSummary,
 )
 from assistant_web_backend.services.phoenix import PhoenixService
+from assistant_web_backend.services.session_tree import (
+    append_label_entry,
+    append_message_entry,
+    load_session_tree,
+)
 from assistant_web_backend.storage import MessageRecord, Storage
 
 router = APIRouter(prefix="/api", tags=["threads"])
@@ -131,6 +141,7 @@ def list_messages(remote_id: str, storage: Storage = _storage_dep) -> ThreadMess
                 entrypointReference=record.entrypoint_reference,
                 modelId=record.model_id,
                 phoenixSessionId=record.phoenix_session_id,
+                sessionEntryId=record.session_entry_id,
             )
             for record in messages
         ]
@@ -146,6 +157,24 @@ def append_message(
         storage.create_thread(remote_id)
     message = payload.message
     trace_id = payload.phoenix_trace_id or message.phoenix_trace_id
+    try:
+        session_entry_id = append_message_entry(
+            remote_id,
+            {
+                "id": message.id,
+                "role": message.role,
+                "content": message.content,
+                "createdAt": message.created_at,
+                "runMode": payload.run_mode or message.run_mode,
+                "executionMode": payload.execution_mode or message.execution_mode,
+                "entrypointReference": payload.entrypoint_reference or message.entrypoint_reference,
+                "modelId": payload.model_id or message.model_id,
+            },
+            entry_id=message.id,
+            parent_entry_id=payload.parent_session_entry_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     storage.append_message(
         MessageRecord(
             message_id=message.id,
@@ -160,9 +189,34 @@ def append_message(
             entrypoint_reference=payload.entrypoint_reference or message.entrypoint_reference,
             model_id=payload.model_id or message.model_id,
             phoenix_session_id=payload.phoenix_session_id or message.phoenix_session_id,
+            session_entry_id=session_entry_id,
         )
     )
     return {"status": "ok"}
+
+
+@router.get("/threads/{remote_id}/session-tree", response_model=SessionTreeResponse)
+def get_session_tree(remote_id: str, storage: Storage = _storage_dep) -> SessionTreeResponse:
+    """Fetch the session tree for a thread."""
+    if not storage.fetch_thread(remote_id):
+        raise HTTPException(status_code=404, detail="Thread not found")
+    return load_session_tree(remote_id)
+
+
+@router.post("/threads/{remote_id}/session-tree/label", response_model=SessionLabelResponse)
+def label_session_entry(
+    remote_id: str,
+    payload: SessionLabelRequest,
+    storage: Storage = _storage_dep,
+) -> SessionLabelResponse:
+    """Label a session entry for easier navigation."""
+    if not storage.fetch_thread(remote_id):
+        raise HTTPException(status_code=404, detail="Thread not found")
+    try:
+        label_entry_id = append_label_entry(remote_id, payload.entry_id, payload.label)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return SessionLabelResponse(status="ok", labelEntryId=label_entry_id)
 
 
 def _title_from_messages(messages: list[MessagePayload]) -> str:

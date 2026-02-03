@@ -36,6 +36,7 @@ class MessageRecord:
     entrypoint_reference: str | None = None
     model_id: str | None = None
     phoenix_session_id: str | None = None
+    session_entry_id: str | None = None
 
 
 class Storage:
@@ -101,7 +102,7 @@ class Storage:
         rows = self._fetch_all(
             """SELECT id, thread_id, role, content, created_at, phoenix_trace_id,
                       run_profile, run_mode, execution_mode, entrypoint_reference,
-                      model_id, phoenix_session_id
+                      model_id, phoenix_session_id, session_entry_id
                FROM messages WHERE thread_id = ? ORDER BY created_at ASC""",
             (remote_id,),
         )
@@ -119,6 +120,7 @@ class Storage:
                 entrypoint_reference=row[9],
                 model_id=row[10],
                 phoenix_session_id=row[11],
+                session_entry_id=row[12],
             )
             for row in rows
         ]
@@ -129,8 +131,8 @@ class Storage:
             """INSERT OR REPLACE INTO messages
                (id, thread_id, role, content, created_at, phoenix_trace_id,
                 run_profile, run_mode, execution_mode, entrypoint_reference,
-                model_id, phoenix_session_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                model_id, phoenix_session_id, session_entry_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 record.message_id,
                 record.thread_id,
@@ -144,6 +146,7 @@ class Storage:
                 record.entrypoint_reference,
                 record.model_id,
                 record.phoenix_session_id,
+                record.session_entry_id,
             ),
         )
         self._execute(
@@ -185,10 +188,12 @@ class Storage:
                     entrypoint_reference TEXT,
                     model_id TEXT,
                     phoenix_session_id TEXT,
+                    session_entry_id TEXT,
                     FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
                 )
                 """
             )
+            _ensure_column(conn, "messages", "session_entry_id", "TEXT")
 
     def _fetch_all(self, query: str, params: tuple[Any, ...] = ()) -> list[tuple[Any, ...]]:
         with sqlite3.connect(self._db_path) as conn:
@@ -203,3 +208,11 @@ class Storage:
 
 def _timestamp() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, column_type: str) -> None:
+    cursor = conn.execute(f"PRAGMA table_info({table})")
+    existing = {row[1] for row in cursor.fetchall()}
+    if column in existing:
+        return
+    conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}")

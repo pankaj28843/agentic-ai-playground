@@ -13,10 +13,12 @@ that respond to lifecycle events (BeforeInvocation, BeforeToolCall, etc.).
 """
 
 from agent_toolkit.hooks.approval import ToolApprovalHook
+from agent_toolkit.hooks.plan_mode import PlanModeHook
 from agent_toolkit.hooks.techdocs import TechDocsWorkflowHook
 from agent_toolkit.hooks.telemetry import ToolTelemetry, ToolTelemetryHook
 
 __all__ = [
+    "PlanModeHook",
     "TechDocsWorkflowHook",
     "ToolApprovalHook",
     "ToolTelemetry",

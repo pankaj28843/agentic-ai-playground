@@ -53,3 +53,5 @@ class ChatRunRequest(ApiModel):
     thread_id: str | None = Field(default=None, alias="threadId")
     profile: str | None = None
     run_mode: str | None = Field(default=None, alias="runMode")
+    model_override: str | None = Field(default=None, alias="modelOverride")
+    tool_groups_override: list[str] | None = Field(default=None, alias="toolGroupsOverride")

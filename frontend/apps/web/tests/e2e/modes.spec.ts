@@ -51,7 +51,7 @@ test.describe("Run modes", () => {
     // Select a single-entrypoint mode
     const data = await fetchProfiles(request);
     const runMode = pickRunMode(data, "single");
-    await page.getByRole("combobox", { name: "Mode" }).selectOption(runMode);
+    await page.getByRole("combobox", { name: "Run mode" }).selectOption(runMode);
 
     // Send message
     const input = page.getByPlaceholder("Send a message...");
@@ -77,7 +77,7 @@ test.describe("Run modes", () => {
   });
 
   test("mode selection persists across interactions", async ({ page, request }) => {
-    const modeCombobox = page.getByRole("combobox", { name: "Mode" });
+    const modeCombobox = page.getByRole("combobox", { name: "Run mode" });
     const data = await fetchProfiles(request);
     const modes = data.runModes;
     if (modes.length < 2) {

@@ -13,6 +13,8 @@ export default defineConfig({
       "**/dist/**",
       "apps/**/tests/e2e/**",
     ],
+    environment: "jsdom",
+    setupFiles: ["apps/web/src/test/setup.ts"],
     passWithNoTests: true,
   },
 });

@@ -11,6 +11,10 @@ This folder is organized for first-time users who want to understand the system 
 
 ## 3. Core concepts
 - [Building blocks](building-blocks.md)
+- [Sessions & branching](sessions.md)
+- [Compaction](compaction.md)
+- [Extensions](extensions.md)
+- [Skills & prompts](skills-prompts.md)
 
 ## 4. Common workflows
 - [Debugging workflow](debugging-workflow.md)
@@ -18,3 +22,4 @@ This folder is organized for first-time users who want to understand the system 
 
 ## 5. Advanced usage
 - [Prompts](prompts/)
+- [Extension examples](examples/extensions/README.md)

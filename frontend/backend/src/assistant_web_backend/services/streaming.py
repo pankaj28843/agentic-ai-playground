@@ -12,6 +12,8 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
+from agent_toolkit.tools.truncation import truncate_text
+
 from assistant_web_backend.models.messages import ContentPart, ToolCallStatus
 
 
@@ -317,17 +319,28 @@ class StreamState:
                 result = content
 
         serialized_result = self._serialize_tool_result(result)
+        truncated_result = None
+        result_full = None
+        if serialized_result is not None:
+            truncation = truncate_text(serialized_result, 2000)
+            truncated_result = truncation.text
+            if truncation.truncated:
+                result_full = serialized_result
 
         if result_tool_id and result_tool_id in self.tool_calls:
             tool = self.tool_calls[result_tool_id]
-            tool.result = serialized_result
+            tool.result = truncated_result
+            tool.result_full = result_full
+            tool.result_truncated = result_full is not None
             tool.status = ToolCallStatus(type="complete")
             tool.is_error = is_error
             return True
 
         if self.tool_calls:
             last_tool = list(self.tool_calls.values())[-1]
-            last_tool.result = serialized_result
+            last_tool.result = truncated_result
+            last_tool.result_full = result_full
+            last_tool.result_truncated = result_full is not None
             last_tool.status = ToolCallStatus(type="complete")
             last_tool.is_error = is_error
             return True

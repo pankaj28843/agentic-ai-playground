@@ -4,6 +4,7 @@
 
 import type { ChatModelAdapter, ChatModelRunResult } from "@assistant-ui/react";
 import { ApiClient, phoenixMetadataEvents, runtimeMetadataEvents } from "@agentic-ai-playground/api-client";
+import type { RunOverrides } from "../types";
 import { toApiMessage } from "../converters";
 
 const baseUrl =
@@ -20,13 +21,15 @@ const ASSISTANT_UI_SUPPORTED_TYPES = new Set(["text", "tool-call", "reasoning"])
  *
  * @param runMode - Public profile name (run mode)
  */
-export const createChatAdapter = (runMode?: string): ChatModelAdapter => ({
+export const createChatAdapter = (runMode?: string, overrides?: RunOverrides): ChatModelAdapter => ({
   async *run({ messages, abortSignal, unstable_threadId }): AsyncGenerator<ChatModelRunResult> {
     const response = await api.runChat(
       {
         messages: messages.map(toApiMessage),
         threadId: unstable_threadId,
         runMode,
+        modelOverride: overrides?.modelOverride ?? undefined,
+        toolGroupsOverride: overrides?.toolGroupsOverride ?? undefined,
       },
       abortSignal,
     );

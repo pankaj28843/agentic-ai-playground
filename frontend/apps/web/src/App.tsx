@@ -1,6 +1,13 @@
-import { ApiClient, type PhoenixConfig, type ProfilesResponse } from "@agentic-ai-playground/api-client";
+import {
+  ApiClient,
+  type PhoenixConfig,
+  type ProfilesResponse,
+  type ResourcesResponse,
+  type SettingsResponse,
+} from "@agentic-ai-playground/api-client";
 import {
   AssistantRuntimeProvider,
+  type RunOverrides,
   useThreadRouterSync,
 } from "@agentic-ai-playground/assistant-runtime";
 import { Bot, Loader2, Menu, Monitor, Moon, Sun, X } from "lucide-react";
@@ -9,8 +16,13 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { ThreadList } from "./components/ThreadList";
 import { ThreadNotFound } from "./components/ThreadNotFound";
+import { SettingsPanel } from "./components/SettingsPanel";
+import { SessionTreePanel } from "./components/SessionTreePanel";
 import { ThreadView } from "./components/ThreadView";
 import { TracePanel } from "./components/TracePanel";
+import { ResourcesProvider } from "./contexts/ResourcesContext";
+import { SettingsProvider } from "./contexts/SettingsContext";
+import { SessionTreeProvider } from "./contexts/SessionTreeContext";
 import { TraceProvider, useTrace } from "./contexts/TraceContext";
 import { useResizableSidebar, useTheme } from "./hooks";
 import styles from "./App.module.css";
@@ -137,11 +149,12 @@ const AppContent = ({
 
       <div className={styles.sidebarThreads}>
         <ThreadList />
+        <SessionTreePanel />
       </div>
 
       <div className={styles.sidebarControls}>
         <label className={styles.controlRow}>
-          <span>Mode</span>
+          <span>Run mode</span>
           <select
             value={runMode}
             onChange={(event) => setRunMode(event.target.value)}
@@ -159,6 +172,7 @@ const AppContent = ({
             })}
           </select>
         </label>
+        <SettingsPanel profiles={profiles} runMode={runMode} />
       </div>
     </>
   );
@@ -279,6 +293,17 @@ export const App = () => {
   const [profiles, setProfiles] = useState<ProfilesResponse | null>(null);
   const [runMode, setRunMode] = useState<string>("");
   const [phoenixConfig, setPhoenixConfig] = useState<PhoenixConfig | null>(null);
+  const [resources, setResources] = useState<ResourcesResponse | null>(null);
+  const [resourcesError, setResourcesError] = useState<string | null>(null);
+  const [resourcesLoading, setResourcesLoading] = useState<boolean>(true);
+  const [settings, setSettings] = useState<SettingsResponse | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsLoading, setSettingsLoading] = useState<boolean>(true);
+  const [enabledSkills, setEnabledSkills] = useState<string[]>([]);
+  const [enabledPrompts, setEnabledPrompts] = useState<string[]>([]);
+  const [resourcesInitialized, setResourcesInitialized] = useState<boolean>(false);
+  const [modelOverride, setModelOverride] = useState<string | null>(null);
+  const [toolGroupsOverride, setToolGroupsOverride] = useState<string[] | null>(null);
 
   const apiClient = useMemo(() => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -312,6 +337,34 @@ export const App = () => {
     };
   }, [apiClient]);
 
+  // Fetch settings metadata
+  useEffect(() => {
+    let cancelled = false;
+    setSettingsLoading(true);
+    apiClient
+      .getSettings()
+      .then((response) => {
+        if (!cancelled) {
+          setSettings(response);
+          setSettingsError(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setSettings(null);
+          setSettingsError(err instanceof Error ? err.message : "Failed to load settings");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setSettingsLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiClient]);
+
   // Fetch Phoenix config separately
   useEffect(() => {
     let cancelled = false;
@@ -330,17 +383,91 @@ export const App = () => {
     };
   }, [apiClient]);
 
+  // Fetch skill/prompt resources separately
+  useEffect(() => {
+    let cancelled = false;
+    setResourcesLoading(true);
+    apiClient
+      .listResources()
+      .then((response) => {
+        if (!cancelled) {
+          setResources(response);
+          setResourcesError(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setResources(null);
+          setResourcesError(err instanceof Error ? err.message : "Failed to load resources");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setResourcesLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [apiClient]);
+
+  useEffect(() => {
+    if (!resources || resourcesInitialized) {
+      return;
+    }
+    setEnabledSkills(resources.skills.map((skill) => skill.name));
+    setEnabledPrompts(resources.prompts.map((prompt) => prompt.name));
+    setResourcesInitialized(true);
+  }, [resources, resourcesInitialized]);
+
+  const runOverrides: RunOverrides = useMemo(
+    () => ({
+      modelOverride,
+      toolGroupsOverride,
+    }),
+    [modelOverride, toolGroupsOverride],
+  );
+
   return (
     <PhoenixContext.Provider value={{ config: phoenixConfig }}>
-      <TraceProvider>
-        <AssistantRuntimeProvider runMode={runMode}>
-          <AppContent
-            profiles={profiles}
-            runMode={runMode}
-            setRunMode={setRunMode}
-          />
-        </AssistantRuntimeProvider>
-      </TraceProvider>
+      <ResourcesProvider
+        value={{
+          resources,
+          isLoading: resourcesLoading,
+          error: resourcesError,
+          enabledSkills,
+          enabledPrompts,
+          setEnabledSkills,
+          setEnabledPrompts,
+        }}
+      >
+        <SettingsProvider
+          value={{
+            models: settings?.models ?? [],
+            defaultModel: settings?.defaultModel ?? null,
+            toolGroups: settings?.toolGroups ?? [],
+            profileDefaults: settings?.profileDefaults ?? [],
+            modelOverride,
+            toolGroupsOverride,
+            setModelOverride,
+            setToolGroupsOverride,
+            isLoading: settingsLoading,
+            error: settingsError,
+          }}
+        >
+          <TraceProvider>
+            <AssistantRuntimeProvider runMode={runMode} runOverrides={runOverrides}>
+              <SessionTreeProvider>
+                <AppContent
+                  profiles={profiles}
+                  runMode={runMode}
+                  setRunMode={setRunMode}
+                />
+              </SessionTreeProvider>
+            </AssistantRuntimeProvider>
+          </TraceProvider>
+        </SettingsProvider>
+      </ResourcesProvider>
     </PhoenixContext.Provider>
   );
 };

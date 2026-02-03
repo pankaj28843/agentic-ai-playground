@@ -104,6 +104,7 @@ export const toThreadMessage = (message: ApiThreadMessage): ThreadMessageLike =>
         executionMode: message.executionMode,
         entrypointReference: message.entrypointReference,
         modelId: message.modelId,
+        sessionEntryId: message.sessionEntryId,
       },
     },
   };

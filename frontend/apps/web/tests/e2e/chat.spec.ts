@@ -65,7 +65,7 @@ test.describe("Chat functionality", () => {
   test("mode selector shows all available modes", async ({ page }) => {
     await page.goto("/");
 
-    const modeCombobox = page.getByRole("combobox", { name: "Mode" });
+    const modeCombobox = page.getByRole("combobox", { name: "Run mode" });
     await expect(modeCombobox).toBeVisible();
 
     const data = await fetchProfiles(page.request);
@@ -85,7 +85,7 @@ test.describe("Chat functionality", () => {
     await page.goto("/");
 
     // Select a single-entrypoint run mode
-    const modeCombobox = page.getByRole("combobox", { name: "Mode" });
+    const modeCombobox = page.getByRole("combobox", { name: "Run mode" });
     const data = await fetchProfiles(request);
     const runMode = pickRunMode(data, "single");
     await modeCombobox.selectOption(runMode);
@@ -184,7 +184,7 @@ test.describe("Chat functionality", () => {
     await page.goto("/");
 
     // Ensure a run mode is selected
-    const modeCombobox = page.getByRole("combobox", { name: "Mode" });
+    const modeCombobox = page.getByRole("combobox", { name: "Run mode" });
     const data = await fetchProfiles(request);
     await modeCombobox.selectOption(pickRunMode(data));
 
