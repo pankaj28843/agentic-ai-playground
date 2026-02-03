@@ -1,6 +1,6 @@
 # Agentic AI Playground
 
-Agentic AI Playground is a local-first environment for building and testing small, config-driven agents. It combines the Strands SDK orchestration layer, a FastAPI backend, and an assistant-ui React frontend, with TechDocs MCP as the default grounding source.
+Agentic AI Playground is a local-first, web-based chat playground for building and testing small, config-driven agents. It combines the Strands SDK orchestration layer, a FastAPI backend, and an assistant-ui React frontend, with TechDocs MCP as the default grounding source.
 
 It is for engineers who want to prototype agent workflows, compare single/graph/swarm modes, and inspect traces without committing to a production stack. If you need a minimal, inspectable playground with clear configuration and reproducible runs, start here.
 
@@ -99,6 +99,7 @@ source .env && uv run python scripts/debug_tui_runtime.py --prompt "list tenants
 ## Non-goals and Limitations
 
 - No authentication or multi-tenant security model.
+- No shell command execution on behalf of users.
 - No backward compatibility guarantees (experimental playground).
 - Not designed as a hosted or managed service.
 - Production hardening is intentionally out of scope.

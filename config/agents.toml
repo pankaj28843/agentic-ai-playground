@@ -269,4 +269,4 @@ End with a single line: [DONE:0]
 model = "bedrock.nova-micro"
 tools = []
 tool_groups = ["techdocs", "strands_basic", "strands_web"]
-metadata = { role = "planner", specialization = "plan_mode", description = "Plan-only mode with read-only tools.", plan_mode = { enabled = true, allowed_shell = ["ls", "pwd", "rg", "cat", "sed", "head", "tail", "wc", "which", "git status", "git diff", "python -V", "python --version", "node -v", "npm -v", "pnpm -v"] } }
+metadata = { role = "planner", specialization = "plan_mode", description = "Plan-only mode with read-only tools.", plan_mode = { enabled = true } }

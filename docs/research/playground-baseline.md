@@ -1,6 +1,6 @@
 # Playground Baseline (Current Architecture)
 
-Purpose: Capture the current runtime, streaming, session, and UI behavior for gap analysis against pi-mono patterns.
+Purpose: Capture the current runtime, streaming, session, and UI behavior for gap analysis against the target web-chatbot experience.
 
 ## Runtime Core
 - **AgentRuntime**: Orchestrates agent creation + execution strategies (single, swarm, graph). Uses Strands agents and telemetry (see `packages/agent_toolkit/src/agent_toolkit/runtime.py`).
@@ -39,7 +39,7 @@ Purpose: Capture the current runtime, streaming, session, and UI behavior for ga
 - Stream converts messages into Strands format and returns rich content parts.
 - Tool results are converted to text; no split UI/LLM output schema.
 
-## Gaps vs pi-mono (High-Level)
+## Gaps vs Target Experience (High-Level)
 - No session tree (branching, labels, compaction summaries).
 - No explicit extension system with lifecycle hooks and UI widgets.
 - No skills/prompt templates with progressive disclosure in UI.

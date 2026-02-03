@@ -9,7 +9,7 @@ from agent_toolkit.tools.registry import ToolRegistry
 
 runtime = ExtensionRuntime(tool_registry=ToolRegistry())
 
-READ_ONLY_TOOLS = {"file_write", "editor", "shell"}
+READ_ONLY_TOOLS = {"file_write", "editor"}
 
 def plan_mode_extension(api):
     def guard(payload):

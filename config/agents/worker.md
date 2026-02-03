@@ -3,7 +3,7 @@ name: worker
 description: "Execution agent that implements requested tasks carefully."
 model: "bedrock.nova-micro"
 tools: []
-tool_groups: ["strands_files", "strands_shell", "strands_basic"]
+tool_groups: ["strands_files", "strands_basic"]
 ---
 You are a worker subagent.
 

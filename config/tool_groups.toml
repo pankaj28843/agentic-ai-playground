@@ -23,11 +23,6 @@ description = "File operations - read, write, edit files"
 tools = ["strands:file_read", "strands:file_write", "strands:editor"]
 capabilities = ["read", "write"]
 
-[tool_groups.strands_shell]
-description = "Shell and environment tools"
-tools = ["strands:shell", "strands:environment"]
-capabilities = ["execute"]
-
 [tool_groups.strands_web]
 description = "Web and search tools"
 tools = ["strands:http_request", "strands:tavily", "strands:exa", "strands:rss"]
@@ -45,7 +40,7 @@ capabilities = ["delegate"]
 
 [tool_groups.strands_code]
 description = "Code execution tools"
-tools = ["strands:python_repl", "strands:shell"]
+tools = ["strands:python_repl"]
 capabilities = ["execute"]
 
 [tool_groups.strands_media]
