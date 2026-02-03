@@ -41,6 +41,24 @@ describe("commands", () => {
     expect(result.resolvedText).toContain("Skill: review");
   });
 
+  it("returns an error when resolved content is empty", () => {
+    const emptyResources: ResourcesResponse = {
+      skills: [],
+      prompts: [
+        {
+          name: "empty",
+          description: "Empty prompt",
+          content: "   ",
+          source: "global",
+        },
+      ],
+      diagnostics: { warnings: [] },
+    };
+    const result = resolveCommand("/prompt empty", emptyResources, ["empty"]);
+    expect(result.applied).toBe(false);
+    expect(result.error).toMatch(/empty/);
+  });
+
   it("filters resources by query", () => {
     const items = filterResources("prompt", resources, "sum", ["summarize"]);
     expect(items).toHaveLength(1);

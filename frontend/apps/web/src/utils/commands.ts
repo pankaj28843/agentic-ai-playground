@@ -44,6 +44,13 @@ export const resolveCommand = (
   }
 
   const resolvedText = formatResolvedText(parsed.type, match.name, match.content);
+  if (!resolvedText) {
+    return {
+      resolvedText: text,
+      applied: false,
+      error: `${parsed.type === "prompt" ? "Prompt" : "Skill"} "${match.name}" is empty.`,
+    };
+  }
   return { resolvedText, applied: true };
 };
 
