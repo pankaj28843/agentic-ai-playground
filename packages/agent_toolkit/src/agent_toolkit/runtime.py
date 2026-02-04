@@ -24,11 +24,11 @@ from agent_toolkit.agents import AgentFactory, build_session_manager
 from agent_toolkit.agents.specialists import techdocs_specialist  # noqa: F401 - registers tool
 from agent_toolkit.config import (
     AgentProfile,
+    expand_agent_tools,
     load_profiles,
     load_settings,
 )
 from agent_toolkit.config.execution_mode import get_execution_mode_resolver
-from agent_toolkit.config.new_loader import NewConfigLoader
 from agent_toolkit.config.swarm_presets import load_swarm_presets
 from agent_toolkit.execution import (
     ExecutionContext,
@@ -233,29 +233,7 @@ class AgentRuntime:
         return self._apply_profile_overrides(profile, model_override, tool_groups_override)
 
     def _build_tools_for_profile(self, profile_name: str, tool_groups: list[str]) -> list[str]:
-        loader = NewConfigLoader()
-        schema, validation = loader.load()
-        if not validation.valid:
-            msg = f"Configuration validation failed: {validation.errors}"
-            raise ValueError(msg)
-
-        agent = schema.agents.get(profile_name)
-        if not agent:
-            return []
-
-        all_tools = list(agent.tools)
-        for group_name in tool_groups:
-            group = schema.tool_groups.get(group_name)
-            if group:
-                all_tools.extend(group.tools)
-
-        seen: set[str] = set()
-        unique_tools: list[str] = []
-        for tool in all_tools:
-            if tool not in seen:
-                unique_tools.append(tool)
-                seen.add(tool)
-        return unique_tools
+        return expand_agent_tools(profile_name, tool_groups)
 
     def run(
         self,
@@ -307,6 +285,8 @@ class AgentRuntime:
                 session_manager=session_manager,
                 template_name=entrypoint_reference,
                 trace_attributes=trace_attrs,
+                model_override=ctx.model_override,
+                tool_groups_override=ctx.tool_groups_override,
             )
             result = graph(prompt, invocation_state=ctx.invocation_state)
         elif execution_mode == "swarm":
@@ -316,6 +296,8 @@ class AgentRuntime:
                 preset=self._swarm_preset,
                 template_name=entrypoint_reference,
                 trace_attributes=trace_attrs,
+                model_override=ctx.model_override,
+                tool_groups_override=ctx.tool_groups_override,
             )
             result = swarm(prompt, invocation_state=ctx.invocation_state)
         else:
@@ -501,26 +483,26 @@ class AgentRuntime:
 
         if execution_mode == "swarm":
             logger.info("Building swarm with template: %s", entrypoint_reference)
-            if ctx.model_override or ctx.tool_groups_override is not None:
-                logger.warning("Model/tool overrides are not applied to swarm executions")
             swarm = build_swarm(
                 self._settings,
                 session_manager=None,
                 preset=self._swarm_preset,
                 template_name=entrypoint_reference,
                 trace_attributes=trace_attrs,
+                model_override=ctx.model_override,
+                tool_groups_override=ctx.tool_groups_override,
             )
             return SwarmStrategy(swarm)
 
         if execution_mode == "graph":
             logger.info("Building graph with template: %s", entrypoint_reference)
-            if ctx.model_override or ctx.tool_groups_override is not None:
-                logger.warning("Model/tool overrides are not applied to graph executions")
             graph = build_graph(
                 self._settings,
                 session_manager=None,
                 template_name=entrypoint_reference,
                 trace_attributes=trace_attrs,
+                model_override=ctx.model_override,
+                tool_groups_override=ctx.tool_groups_override,
             )
             return GraphStrategy(graph)
 

@@ -37,6 +37,14 @@ vi.mock("@assistant-ui/react", () => {
   };
 });
 
+vi.mock("../../contexts/ResourcesContext", () => ({
+  useResources: () => ({
+    resources: { skills: [], prompts: [], diagnostics: { warnings: [] } },
+    enabledSkills: [],
+    enabledPrompts: [],
+  }),
+}));
+
 describe("QueuedComposerControls", () => {
   afterEach(() => {
     cleanup();
@@ -71,7 +79,9 @@ describe("QueuedComposerControls", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /follow-up/i }));
 
-    expect(composerApi.reset).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(composerApi.reset).toHaveBeenCalled();
+    });
     expect(threadApi.cancelRun).not.toHaveBeenCalled();
     expect(screen.getByText(/1 queued/i)).toBeInTheDocument();
 
@@ -91,7 +101,7 @@ describe("QueuedComposerControls", () => {
     });
   });
 
-  it("steers the active run and queues the message", () => {
+  it("steers the active run and queues the message", async () => {
     mockState = {
       thread: { isRunning: true },
       composer: { text: "Change direction", attachments: [] },
@@ -101,8 +111,10 @@ describe("QueuedComposerControls", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /steer/i }));
 
-    expect(composerApi.reset).toHaveBeenCalled();
-    expect(threadApi.cancelRun).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(composerApi.reset).toHaveBeenCalled();
+      expect(threadApi.cancelRun).toHaveBeenCalled();
+    });
     expect(screen.getByText(/1 queued/i)).toBeInTheDocument();
   });
 
@@ -120,5 +132,49 @@ describe("QueuedComposerControls", () => {
     expect(composerApi.reset).not.toHaveBeenCalled();
     expect(threadApi.cancelRun).not.toHaveBeenCalled();
     expect(screen.queryByText(/1 queued/i)).not.toBeInTheDocument();
+  });
+
+  it("ignores empty queue requests", () => {
+    mockState = {
+      thread: { isRunning: true },
+      composer: { text: "", attachments: [] },
+    };
+
+    render(<QueuedComposerControls />);
+
+    fireEvent.click(screen.getByRole("button", { name: /follow-up/i }));
+
+    expect(composerApi.reset).not.toHaveBeenCalled();
+    expect(screen.queryByText(/queued/i)).not.toBeInTheDocument();
+  });
+
+  it("sends immediately when idle", async () => {
+    mockState = {
+      thread: { isRunning: false },
+      composer: { text: "Send now", attachments: [] },
+    };
+
+    render(<QueuedComposerControls />);
+
+    fireEvent.click(screen.getByRole("button", { name: /send/i }));
+
+    await waitFor(() => {
+      expect(composerApi.setText).toHaveBeenCalledWith("Send now");
+      expect(composerApi.send).toHaveBeenCalled();
+    });
+  });
+
+  it("shows warning for unknown slash commands", () => {
+    mockState = {
+      thread: { isRunning: false },
+      composer: { text: "/prompt missing", attachments: [] },
+    };
+
+    render(<QueuedComposerControls />);
+
+    fireEvent.click(screen.getByRole("button", { name: /send/i }));
+
+    expect(screen.getByText(/unknown prompt/i)).toBeInTheDocument();
+    expect(composerApi.send).not.toHaveBeenCalled();
   });
 });

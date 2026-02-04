@@ -106,6 +106,7 @@ class StreamState:
         changed = self._handle_nested_event(event_data) or changed
         changed = self._handle_delta_tool_use(event_data) or changed
         changed = self._handle_text_data(event_data) or changed
+        changed = self._handle_tool_stream_event(event_data) or changed
 
         tool_use = event_data.get("current_tool_use")
         if isinstance(tool_use, dict):
@@ -119,15 +120,7 @@ class StreamState:
         if tool_result is not None:
             changed = self._handle_tool_result(event_data, tool_result) or changed
 
-        message = event_data.get("message")
-        if isinstance(message, dict) and message.get("role") == "user":
-            content = message.get("content", [])
-            for item in content:
-                if isinstance(item, dict) and "toolResult" in item:
-                    tr = item["toolResult"]
-                    changed = (
-                        self._handle_tool_result({"toolUseId": tr.get("toolUseId")}, tr) or changed
-                    )
+        changed = self._handle_message_tool_results(event_data.get("message")) or changed
 
         return self._handle_reasoning_event(event_data) or changed
 
@@ -137,14 +130,21 @@ class StreamState:
         changed = self._handle_nested_event(event_data) or changed
         changed = self._handle_delta_tool_use(event_data) or changed
         changed = self._handle_text_data(event_data) or changed
+        changed = self._handle_tool_stream_event(event_data) or changed
 
         tool_use = event_data.get("current_tool_use")
         if isinstance(tool_use, dict):
             changed = self._handle_tool_start(tool_use) or changed
 
-        tool_result = event_data.get("tool_result") or event_data.get("tool_output")
+        tool_result = event_data.get("tool_result")
+        if tool_result is None and event_data.get("type") == "tool_result":
+            tool_result = event_data
+        if tool_result is None:
+            tool_result = event_data.get("tool_output")
         if tool_result is not None:
             changed = self._handle_tool_result(event_data, tool_result) or changed
+
+        changed = self._handle_message_tool_results(event_data.get("message")) or changed
 
         return self._handle_reasoning_event(event_data) or changed
 
@@ -212,6 +212,39 @@ class StreamState:
 
         return False
 
+    def _handle_message_tool_results(self, message: Any) -> bool:
+        """Handle tool use/results embedded in message content."""
+        if not isinstance(message, dict):
+            return False
+        changed = False
+        content = message.get("content", [])
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            tool_use = item.get("toolUse") or item.get("tool_use")
+            if isinstance(tool_use, dict):
+                changed = (
+                    self._handle_tool_start(
+                        {
+                            "toolUseId": tool_use.get("toolUseId") or tool_use.get("tool_use_id"),
+                            "name": tool_use.get("name"),
+                            "input": tool_use.get("input", {}),
+                        }
+                    )
+                    or changed
+                )
+            if message.get("role") != "user":
+                continue
+            tool_result = item.get("toolResult")
+            if isinstance(tool_result, dict):
+                changed = (
+                    self._handle_tool_result(
+                        {"toolUseId": tool_result.get("toolUseId")}, tool_result
+                    )
+                    or changed
+                )
+        return changed
+
     def _handle_nested_event(self, event_data: dict[str, Any]) -> bool:
         """Handle nested 'event' structure from Strands SDK."""
         nested_event = event_data.get("event")
@@ -251,6 +284,42 @@ class StreamState:
         full_text = "".join(self.text_buffer)
         self._extract_thinking_blocks(full_text)
         return True
+
+    def _handle_tool_stream_event(self, event_data: dict[str, Any]) -> bool:
+        """Handle partial tool streaming events."""
+        tool_stream = event_data.get("tool_stream_event")
+        if tool_stream is None and event_data.get("type") == "tool_stream_event":
+            tool_stream = event_data
+        if not isinstance(tool_stream, dict):
+            return False
+
+        tool_use = tool_stream.get("tool_use") or tool_stream.get("toolUse")
+        data = tool_stream.get("data")
+        tool_use_id = None
+        tool_name = None
+        tool_input: dict[str, Any] | None = None
+        if isinstance(tool_use, dict):
+            tool_use_id = tool_use.get("toolUseId") or tool_use.get("tool_use_id")
+            tool_name = tool_use.get("name")
+            tool_input = tool_use.get("input")
+
+        if tool_use_id and tool_use_id not in self.tool_calls and tool_name:
+            self._handle_tool_start(
+                {"toolUseId": tool_use_id, "name": tool_name, "input": tool_input or {}}
+            )
+
+        if tool_use_id and tool_use_id in self.tool_calls:
+            tool = self.tool_calls[tool_use_id]
+            serialized = self._serialize_tool_result(data)
+            if serialized is not None:
+                truncation = truncate_text(serialized, 2000)
+                tool.result = truncation.text
+                tool.result_full = serialized if truncation.truncated else None
+                tool.result_truncated = truncation.truncated
+                tool.status = ToolCallStatus(type="running")
+                return True
+
+        return False
 
     def _handle_reasoning_event(self, event_data: dict[str, Any]) -> bool:
         """Handle reasoning from SDK (if separate from <thinking> tags)."""

@@ -41,14 +41,24 @@ class OutputAccumulator:
         return "".join(self.output_buffer)
 
 
+def _unwrap_stream_event(event: dict[str, Any]) -> dict[str, Any]:
+    if event.get("type") == "multiagent_node_stream":
+        inner = event.get("event")
+        if isinstance(inner, dict):
+            return inner
+    return event
+
+
 def accumulate_output(event: dict[str, Any], buffer: list[str]) -> None:
     """Accumulate text output from a streaming event."""
+    event = _unwrap_stream_event(event)
     if "data" in event:
         buffer.append(str(event["data"]))
 
 
 def accumulate_tool_event(event: dict[str, Any], tool_events: list[dict[str, Any]]) -> None:
     """Track tool execution from a streaming event."""
+    event = _unwrap_stream_event(event)
     tool_use = event.get("current_tool_use")
     if isinstance(tool_use, dict) and tool_use.get("name"):
         input_text = str(tool_use.get("input", ""))
@@ -66,6 +76,11 @@ def accumulate_tool_event(event: dict[str, Any], tool_events: list[dict[str, Any
         if input_trunc.truncated:
             tool_events[-1]["input_full"] = input_text
     tool_result = event.get("tool_result") or event.get("tool_output")
+    if tool_result is None and event.get("type") == "tool_result":
+        tool_result = event
+    tool_stream_event = event.get("tool_stream_event")
+    if tool_result is None and isinstance(tool_stream_event, dict):
+        tool_result = tool_stream_event.get("data")
     if tool_result and tool_events:
         output_text = str(tool_result)
         output_trunc = truncate_text(output_text, 500)

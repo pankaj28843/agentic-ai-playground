@@ -1,6 +1,6 @@
 import { ArrowRight, Brain, ChevronDown, ChevronRight, Clock, ExternalLink, User, Users, Wrench, X } from "lucide-react";
 import type { FC } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
 import "highlight.js/styles/github-dark.css";
@@ -64,6 +64,8 @@ interface TracePanelProps {
   runtime?: RuntimeInfo; // Runtime metadata (mode, profile, model)
   expandedItems: Set<number>;
   onToggleExpanded: (index: number) => void;
+  fullOutputItems: Set<number>;
+  onToggleFullOutput: (index: number) => void;
 }
 
 /**
@@ -71,18 +73,14 @@ interface TracePanelProps {
  */
 function formatElapsed(startTime: string | undefined, itemTime: string | undefined): string {
   if (!startTime || !itemTime) return "";
-  try {
-    const start = new Date(startTime).getTime();
-    const item = new Date(itemTime).getTime();
-    const elapsedMs = item - start;
-    if (Number.isNaN(elapsedMs) || elapsedMs < 0) return "";
-    const minutes = Math.floor(elapsedMs / 60000);
-    const seconds = Math.floor((elapsedMs % 60000) / 1000);
-    const ms = elapsedMs % 1000;
-    return `T+${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
-  } catch {
-    return "";
-  }
+  const start = new Date(startTime).getTime();
+  const item = new Date(itemTime).getTime();
+  const elapsedMs = item - start;
+  if (Number.isNaN(elapsedMs) || elapsedMs < 0) return "";
+  const minutes = Math.floor(elapsedMs / 60000);
+  const seconds = Math.floor((elapsedMs % 60000) / 1000);
+  const ms = elapsedMs % 1000;
+  return `T+${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
 }
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
@@ -97,20 +95,9 @@ export const TracePanel: FC<TracePanelProps> = ({
   runtime,
   expandedItems,
   onToggleExpanded,
+  fullOutputItems,
+  onToggleFullOutput,
 }) => {
-  const [fullOutputItems, setFullOutputItems] = useState<Set<number>>(new Set());
-
-  const toggleFullOutput = (index: number) => {
-    setFullOutputItems((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
-      return next;
-    });
-  };
   // Sort items chronologically by timestamp
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
@@ -239,7 +226,7 @@ export const TracePanel: FC<TracePanelProps> = ({
                 expanded={expandedItems.has(index)}
                 onToggle={() => onToggleExpanded(index)}
                 showFullOutput={fullOutputItems.has(index)}
-                onToggleFullOutput={() => toggleFullOutput(index)}
+                onToggleFullOutput={() => onToggleFullOutput(index)}
               />
             ))
           )}

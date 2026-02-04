@@ -84,6 +84,12 @@ export const toThreadMessage = (message: ApiThreadMessage): ThreadMessageLike =>
         type: "reasoning",
         text: part.text as string,
       });
+    } else if (part.type === "agent-event") {
+      (content as Array<{ type: "data"; name: string; data: unknown }>).push({
+        type: "data",
+        name: "agent-event",
+        data: part,
+      });
     }
   }
 

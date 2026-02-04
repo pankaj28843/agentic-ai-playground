@@ -108,6 +108,7 @@ def test_chat_run_streams_response(client, monkeypatch) -> None:
     # Create mock profile
     mock_profile = MagicMock()
     mock_profile.name = "test-profile"
+    mock_profile.model = "bedrock.nova-lite"
 
     # Create async generator for streaming
     async def mock_stream(*args, **kwargs):
@@ -126,6 +127,7 @@ def test_chat_run_streams_response(client, monkeypatch) -> None:
     # Mock settings
     mock_settings = MagicMock()
     mock_settings.run_mode = "single"
+    mock_settings.bedrock_model_id = "bedrock.nova-lite"
     monkeypatch.setattr(chat_module, "load_settings", MagicMock(return_value=mock_settings))
 
     response = client.post(
@@ -161,6 +163,7 @@ def test_chat_run_streams_rich_content_with_tool_calls(client, monkeypatch) -> N
     # Create mock profile
     mock_profile = MagicMock()
     mock_profile.name = "test-profile"
+    mock_profile.model = "bedrock.nova-lite"
 
     # Create async generator that simulates tool call events
     async def mock_stream(*args, **kwargs):
@@ -191,6 +194,7 @@ def test_chat_run_streams_rich_content_with_tool_calls(client, monkeypatch) -> N
     # Mock settings
     mock_settings = MagicMock()
     mock_settings.run_mode = "single"
+    mock_settings.bedrock_model_id = "bedrock.nova-lite"
     monkeypatch.setattr(chat_module, "load_settings", MagicMock(return_value=mock_settings))
 
     response = client.post(
@@ -223,6 +227,103 @@ def test_chat_run_streams_rich_content_with_tool_calls(client, monkeypatch) -> N
         for part in chunk["content"]:
             assert "type" in part
             assert part["type"] in ("text", "tool-call", "reasoning")
+
+
+def test_chat_run_persists_thread_overrides(client, monkeypatch) -> None:
+    """Test that overrides from /api/chat/run are persisted to thread metadata."""
+    from unittest.mock import MagicMock
+
+    from assistant_web_backend.routes import chat as chat_module
+    from assistant_web_backend.services import runtime as runtime_module
+
+    mock_profile = MagicMock()
+    mock_profile.name = "test-profile"
+    mock_profile.model = "bedrock.nova-lite"
+
+    async def mock_stream(*args, **kwargs):
+        yield {"data": "Hello"}
+
+    mock_runtime = MagicMock()
+    mock_runtime.list_profiles.return_value = [mock_profile]
+    mock_runtime.stream = mock_stream
+    mock_runtime.build_invocation_state = MagicMock(return_value={})
+
+    monkeypatch.setattr(runtime_module.RuntimeService, "get_runtime", lambda: mock_runtime)
+
+    mock_settings = MagicMock()
+    mock_settings.run_mode = "single"
+    mock_settings.bedrock_model_id = "bedrock.nova-lite"
+    monkeypatch.setattr(chat_module, "load_settings", MagicMock(return_value=mock_settings))
+
+    response = client.post(
+        "/api/chat/run",
+        json={
+            "messages": [
+                {
+                    "id": "msg-1",
+                    "role": "user",
+                    "content": [{"type": "text", "text": "Hi"}],
+                    "createdAt": "2024-01-15T00:00:00Z",
+                }
+            ],
+            "threadId": "thread-override",
+            "modelOverride": "bedrock.nova-pro",
+            "toolGroupsOverride": ["techdocs"],
+        },
+    )
+    assert response.status_code == 200
+    _ = response.text
+
+    detail = client.get("/api/threads/thread-override").json()
+    assert detail["modelOverride"] == "bedrock.nova-pro"
+    assert detail["toolGroupsOverride"] == ["techdocs"]
+
+
+def test_chat_run_inference_profile_error_is_friendly(client, monkeypatch) -> None:
+    """Test inference profile errors are mapped to a friendly message."""
+    from unittest.mock import MagicMock
+
+    from assistant_web_backend.routes import chat as chat_module
+    from assistant_web_backend.services import runtime as runtime_module
+
+    mock_profile = MagicMock()
+    mock_profile.name = "test-profile"
+    mock_profile.model = "bedrock.nova-lite"
+
+    async def mock_stream(*args, **kwargs):
+        raise RuntimeError(
+            "Invocation of model ID anthropic.claude-haiku-4-5-20251001-v1:0 with on-demand throughput isn't supported."
+        )
+        yield {"data": "unreachable"}
+
+    mock_runtime = MagicMock()
+    mock_runtime.list_profiles.return_value = [mock_profile]
+    mock_runtime.stream = mock_stream
+    mock_runtime.build_invocation_state = MagicMock(return_value={})
+
+    monkeypatch.setattr(runtime_module.RuntimeService, "get_runtime", lambda: mock_runtime)
+
+    mock_settings = MagicMock()
+    mock_settings.run_mode = "single"
+    mock_settings.bedrock_model_id = "bedrock.nova-lite"
+    monkeypatch.setattr(chat_module, "load_settings", MagicMock(return_value=mock_settings))
+
+    response = client.post(
+        "/api/chat/run",
+        json={
+            "messages": [
+                {
+                    "id": "msg-1",
+                    "role": "user",
+                    "content": [{"type": "text", "text": "Hi"}],
+                    "createdAt": "2024-01-15T00:00:00Z",
+                }
+            ],
+            "threadId": "thread-error",
+        },
+    )
+    assert response.status_code == 200
+    assert "inference profile" in response.text.lower()
 
 
 def test_chat_run_requires_runtime(client, monkeypatch) -> None:

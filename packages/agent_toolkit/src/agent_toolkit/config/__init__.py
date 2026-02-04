@@ -8,7 +8,12 @@ from agent_toolkit.config.config_paths import (
     resolve_config_path,
     set_config_dir,
 )
-from agent_toolkit.config.profiles import AgentProfile, ProfileType, load_profiles
+from agent_toolkit.config.profiles import (
+    AgentProfile,
+    ProfileType,
+    expand_agent_tools,
+    load_profiles,
+)
 from agent_toolkit.config.settings import Settings, load_settings
 from agent_toolkit.config.swarm_presets import SwarmPreset, load_swarm_presets
 
@@ -18,6 +23,7 @@ __all__ = [
     "Settings",
     "SwarmPreset",
     "ensure_config_dir",
+    "expand_agent_tools",
     "get_all_config_paths",
     "get_bundled_path",
     "get_config_dir",

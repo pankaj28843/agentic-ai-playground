@@ -179,6 +179,30 @@ const AssistantMessage: FC = () => {
           traceItems.push({ type: "thinking", text: match[1].trim() });
         }
       }
+    } else if (part.type === "data") {
+      const dataPart = part as { name?: string; data?: unknown };
+      if (dataPart.name === "agent-event" && dataPart.data && typeof dataPart.data === "object") {
+        const agentPart = dataPart.data as {
+          agentName?: string;
+          eventType?: string;
+          fromAgents?: string[];
+          toAgents?: string[];
+          handoffMessage?: string;
+          timestamp?: string;
+        };
+        if (agentPart.timestamp && (!earliestTimestamp || agentPart.timestamp < earliestTimestamp)) {
+          earliestTimestamp = agentPart.timestamp;
+        }
+        traceItems.push({
+          type: "agent-event",
+          agentName: agentPart.agentName,
+          eventType: (agentPart.eventType as "start" | "complete" | "handoff") ?? "start",
+          fromAgents: agentPart.fromAgents,
+          toAgents: agentPart.toAgents,
+          handoffMessage: agentPart.handoffMessage,
+          timestamp: agentPart.timestamp,
+        });
+      }
     } else if ((part as { type: string }).type === "agent-event") {
       // Handle multi-agent orchestration events (graph/swarm mode)
       const agentPart = part as {

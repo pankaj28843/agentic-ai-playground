@@ -18,7 +18,7 @@ class TestModelProviderRegistry:
         # Register Bedrock provider
         bedrock_provider = ProviderConfig(
             type="bedrock",
-            region="us-east-1",
+            region="eu-central-1",
             default=True,
             models={
                 "nova-pro": ModelConfig(
@@ -84,7 +84,7 @@ class TestModelProviderRegistry:
 
         mock_bedrock.assert_called_once_with(
             model_id="us.amazon.nova-pro-v1:0",
-            region_name="us-east-1",
+            region_name="eu-central-1",
             temperature=0.7,
             max_tokens=8000,
             streaming=True,
@@ -130,7 +130,7 @@ class TestMultipleProviders:
             "bedrock",
             ProviderConfig(
                 type="bedrock",
-                region="us-east-1",
+                region="eu-central-1",
                 default=True,
                 models={"nova": ModelConfig(model_id="us.amazon.nova-pro-v1:0")},
             ),
@@ -187,7 +187,7 @@ class TestModelConfigOverrides:
             "bedrock",
             ProviderConfig(
                 type="bedrock",
-                region="us-east-1",
+                region="eu-central-1",
                 default=True,
                 models={
                     "nova-pro": ModelConfig(
@@ -213,7 +213,7 @@ class TestModelConfigOverrides:
 
         mock_bedrock.assert_called_once_with(
             model_id="us.amazon.nova-pro-v1:0",
-            region_name="us-east-1",
+            region_name="eu-central-1",
             temperature=0.9,
             max_tokens=16000,
             streaming=True,

@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 
 from opentelemetry import trace as otel_trace
 from opentelemetry.trace import Status, StatusCode, format_trace_id
+from phoenix.otel import register
 
 if TYPE_CHECKING:
     from opentelemetry.sdk.trace import TracerProvider
@@ -166,8 +167,6 @@ class PhoenixTelemetryProvider:
     def _do_setup(self) -> TracerProvider | None:
         """Internal setup logic with exception handling."""
         try:
-            from phoenix.otel import register  # noqa: PLC0415
-
             # Build the OTLP endpoint (HTTP)
             endpoint = self._config.collector_endpoint
             if not endpoint.endswith("/v1/traces"):
@@ -189,8 +188,6 @@ class PhoenixTelemetryProvider:
             self._initialized = True
 
             logger.info("Phoenix telemetry initialized successfully")
-        except ImportError as e:
-            logger.warning("Phoenix OTEL not available: %s", e)
         except OSError as e:
             logger.warning("Failed to initialize Phoenix telemetry (connection error): %s", e)
         except RuntimeError as e:

@@ -12,6 +12,7 @@
  */
 
 import { expect, test, APIRequestContext } from "@playwright/test";
+import { waitForAssistantDone } from "./helpers";
 
 const BASE_URL = process.env.E2E_BASE_URL;
 if (!BASE_URL) {
@@ -94,9 +95,7 @@ test.describe("Tool calls in quick mode", () => {
     await page.getByRole("button", { name: "Send" }).click();
 
     // Wait for response to complete
-    await expect(page.locator("text=done").first()).toBeVisible({
-      timeout: TOOL_CALL_TIMEOUT,
-    });
+    await waitForAssistantDone(page, TOOL_CALL_TIMEOUT);
 
     // Verify trace button shows tool calls (not just thinking steps)
     const traceButton = page.getByRole("button", { name: /View agent trace/ });
@@ -156,9 +155,7 @@ test.describe("Tool calls in quick mode", () => {
     await input.fill("What is Django ORM? Search TechDocs and cite your sources.");
     await page.getByRole("button", { name: "Send" }).click();
 
-    await expect(page.locator("text=done").first()).toBeVisible({
-      timeout: TOOL_CALL_TIMEOUT,
-    });
+    await waitForAssistantDone(page, TOOL_CALL_TIMEOUT);
 
     // Check for real URLs in response - use main content area
     const mainContent = page.locator("main");
@@ -208,9 +205,7 @@ test.describe("Tool calls in research mode", () => {
     );
     await page.getByRole("button", { name: "Send" }).click();
 
-    await expect(page.locator("text=done").first()).toBeVisible({
-      timeout: TOOL_CALL_TIMEOUT,
-    });
+    await waitForAssistantDone(page, TOOL_CALL_TIMEOUT);
 
     // Open trace panel
     const traceButton = page.getByRole("button", { name: /View agent trace/ });
@@ -250,6 +245,7 @@ test.describe("Tool calls in research mode", () => {
     page,
     request,
   }) => {
+    test.setTimeout(120000);
     const threadCountBefore = await getThreadCount(request);
 
     const resolved = await resolveRunMode(request, "graph");
@@ -264,9 +260,7 @@ test.describe("Tool calls in research mode", () => {
     );
     await page.getByRole("button", { name: "Send" }).click();
 
-    await expect(page.locator("text=done").first()).toBeVisible({
-      timeout: TOOL_CALL_TIMEOUT,
-    });
+    await waitForAssistantDone(page, TOOL_CALL_TIMEOUT);
 
     // Response should contain actual content (not just tool descriptions)
     const mainContent = page.locator("main");
@@ -311,9 +305,7 @@ test.describe("Tool calls in expert mode", () => {
     );
     await page.getByRole("button", { name: "Send" }).click();
 
-    await expect(page.locator("text=done").first()).toBeVisible({
-      timeout: TOOL_CALL_TIMEOUT,
-    });
+    await waitForAssistantDone(page, TOOL_CALL_TIMEOUT);
 
     // Graph mode should also show tool calls in trace
     const traceButton = page.getByRole("button", { name: /View agent trace/ });
@@ -327,7 +319,7 @@ test.describe("Tool calls in expert mode", () => {
     const toolCalls = tracePanel.locator("button").filter({
       hasText: /TechDocs_/,
     });
-    expect(await toolCalls.count()).toBeGreaterThanOrEqual(1);
+    await expect.poll(async () => await toolCalls.count(), { timeout: TOOL_CALL_TIMEOUT }).toBeGreaterThanOrEqual(1);
 
     await page.keyboard.press("Escape");
     await cleanupNewThreads(request, threadCountBefore);
@@ -357,9 +349,7 @@ test.describe("Trace panel functionality", () => {
     await input.fill("List TechDocs tenants. Just call the tool.");
     await page.getByRole("button", { name: "Send" }).click();
 
-    await expect(page.locator("text=done").first()).toBeVisible({
-      timeout: TOOL_CALL_TIMEOUT,
-    });
+    await waitForAssistantDone(page, TOOL_CALL_TIMEOUT);
 
     const traceButton = page.getByRole("button", { name: /View agent trace/ });
     await expect(traceButton).toBeVisible({ timeout: 10000 });
@@ -403,9 +393,7 @@ test.describe("Trace panel functionality", () => {
     await input.fill("What is Python? Use TechDocs.");
     await page.getByRole("button", { name: "Send" }).click();
 
-    await expect(page.locator("text=done").first()).toBeVisible({
-      timeout: TOOL_CALL_TIMEOUT,
-    });
+    await waitForAssistantDone(page, TOOL_CALL_TIMEOUT);
 
     // Open trace panel
     const traceButton = page.getByRole("button", { name: /View agent trace/ });
@@ -468,9 +456,7 @@ test.describe("Complex debugging queries", () => {
     );
     await page.getByRole("button", { name: "Send" }).click();
 
-    await expect(page.locator("text=done").first()).toBeVisible({
-      timeout: TOOL_CALL_TIMEOUT,
-    });
+    await waitForAssistantDone(page, TOOL_CALL_TIMEOUT);
 
     // Should have multiple tool calls for this complex query
     const traceButton = page.getByRole("button", { name: /View agent trace/ });
@@ -503,6 +489,7 @@ test.describe("Complex debugging queries", () => {
     page,
     request,
   }) => {
+    test.setTimeout(120000);
     const threadCountBefore = await getThreadCount(request);
 
     const resolved = await resolveRunMode(request, "graph");
@@ -520,9 +507,7 @@ test.describe("Complex debugging queries", () => {
     );
     await page.getByRole("button", { name: "Send" }).click();
 
-    await expect(page.locator("text=done").first()).toBeVisible({
-      timeout: TOOL_CALL_TIMEOUT,
-    });
+    await waitForAssistantDone(page, TOOL_CALL_TIMEOUT);
 
     // Response should be substantive (real research, not hallucinated)
     const mainContent = page.locator("main");

@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
-import { createContext, useContext } from "react";
 
 import type { ResourcesResponse } from "@agentic-ai-playground/api-client";
+
+import { useAppDataActor, useAppDataSelector } from "../state/appDataContext";
 
 export type ResourcesState = {
   resources: ResourcesResponse | null;
@@ -13,24 +14,23 @@ export type ResourcesState = {
   setEnabledPrompts: (names: string[]) => void;
 };
 
-const ResourcesContext = createContext<ResourcesState>({
-  resources: null,
-  isLoading: true,
-  error: null,
-  enabledSkills: [],
-  enabledPrompts: [],
-  setEnabledSkills: () => undefined,
-  setEnabledPrompts: () => undefined,
-});
+export const useResources = (): ResourcesState => {
+  const actorRef = useAppDataActor();
+  const resources = useAppDataSelector((state) => state.context.resources);
+  const enabledSkills = useAppDataSelector((state) => state.context.enabledSkills);
+  const enabledPrompts = useAppDataSelector((state) => state.context.enabledPrompts);
+  const error = useAppDataSelector((state) => state.context.errors.resources);
+  const isLoading = useAppDataSelector((state) => state.matches({ resources: "loading" }));
 
-export const ResourcesProvider = ({
-  value,
-  children,
-}: {
-  value: ResourcesState;
-  children: ReactNode;
-}) => {
-  return <ResourcesContext.Provider value={value}>{children}</ResourcesContext.Provider>;
+  return {
+    resources,
+    enabledSkills,
+    enabledPrompts,
+    isLoading,
+    error,
+    setEnabledSkills: (names) => actorRef.send({ type: "RESOURCES.SKILLS.SET", values: names }),
+    setEnabledPrompts: (names) => actorRef.send({ type: "RESOURCES.PROMPTS.SET", values: names }),
+  };
 };
 
-export const useResources = () => useContext(ResourcesContext);
+export const ResourcesProvider = ({ children }: { children: ReactNode }) => children;

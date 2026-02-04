@@ -34,6 +34,8 @@ export type ThreadDetail = {
   status: ThreadStatus;
   createdAt: string;
   updatedAt: string;
+  modelOverride?: string | null;
+  toolGroupsOverride?: string[] | null;
 };
 
 export type ThreadListResponse = {
@@ -94,6 +96,14 @@ export type ToolGroupSummary = {
   capabilities: string[];
 };
 
+export type InferenceProfileSummary = {
+  inferenceProfileId?: string | null;
+  inferenceProfileArn?: string | null;
+  name?: string | null;
+  status?: string | null;
+  type?: string | null;
+};
+
 export type ProfileDefaults = {
   profileId: string;
   model?: string | null;
@@ -105,6 +115,7 @@ export type SettingsResponse = {
   defaultModel?: string | null;
   toolGroups: ToolGroupSummary[];
   profileDefaults: ProfileDefaults[];
+  inferenceProfiles?: InferenceProfileSummary[];
   warnings: string[];
 };
 

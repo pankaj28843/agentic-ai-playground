@@ -60,8 +60,8 @@ class TestPhoenixTelemetryProvider:
         )
         provider = PhoenixTelemetryProvider(config)
 
-        # Mock phoenix.otel.register to avoid actual connection
-        with patch("phoenix.otel.register") as mock_register:
+        # Mock phoenix register to avoid actual connection
+        with patch("agent_toolkit.telemetry.phoenix.register") as mock_register:
             mock_tracer_provider = MagicMock()
             mock_register.return_value = mock_tracer_provider
 
@@ -85,7 +85,7 @@ class TestPhoenixTelemetryProvider:
         )
         provider = PhoenixTelemetryProvider(config)
 
-        with patch("phoenix.otel.register") as mock_register:
+        with patch("agent_toolkit.telemetry.phoenix.register") as mock_register:
             mock_register.return_value = MagicMock()
             provider.setup()
             mock_register.assert_called_once()
@@ -137,7 +137,7 @@ class TestPhoenixTelemetryProvider:
         )
         provider = PhoenixTelemetryProvider(config)
 
-        with patch("phoenix.otel.register") as mock_register:
+        with patch("agent_toolkit.telemetry.phoenix.register") as mock_register:
             mock_tracer_provider = MagicMock()
             mock_register.return_value = mock_tracer_provider
 

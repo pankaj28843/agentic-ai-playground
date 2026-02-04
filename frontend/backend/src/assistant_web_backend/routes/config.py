@@ -8,6 +8,7 @@ from agent_toolkit.providers import load_providers
 from fastapi import APIRouter, HTTPException
 
 from assistant_web_backend.models.config import (
+    InferenceProfileSummary,
     PhoenixConfigResponse,
     ProfileDefaults,
     SettingsResponse,
@@ -20,6 +21,7 @@ from assistant_web_backend.models.resources import (
     ResourcesResponse,
     SkillResource,
 )
+from assistant_web_backend.services.bedrock_metadata import fetch_bedrock_overrides
 from assistant_web_backend.services.phoenix import PhoenixService
 from assistant_web_backend.services.resources import load_resources
 from assistant_web_backend.services.runtime import RuntimeService
@@ -111,6 +113,8 @@ def list_settings() -> SettingsResponse:
     schema, validation = loader.load()
     registry = load_providers()
     settings = load_settings()
+    bedrock_overrides = fetch_bedrock_overrides()
+    models = bedrock_overrides.models or sorted(registry.list_models())
 
     tool_groups = [
         ToolGroupSummary(
@@ -139,9 +143,19 @@ def list_settings() -> SettingsResponse:
         )
 
     return SettingsResponse(
-        models=sorted(registry.list_models()),
+        models=models,
         defaultModel=settings.bedrock_model_id,
         toolGroups=sorted(tool_groups, key=lambda g: g.name),
         profileDefaults=sorted(profile_defaults, key=lambda p: p.profile_id),
-        warnings=validation.warnings,
+        inferenceProfiles=[
+            InferenceProfileSummary(
+                inferenceProfileId=profile.inference_profile_id,
+                inferenceProfileArn=profile.inference_profile_arn,
+                name=profile.name,
+                status=profile.status,
+                type=profile.type,
+            )
+            for profile in bedrock_overrides.inference_profiles
+        ],
+        warnings=validation.warnings + bedrock_overrides.warnings,
     )

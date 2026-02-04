@@ -68,6 +68,8 @@ def get_thread(remote_id: str, storage: Storage = _storage_dep) -> ThreadDetailR
         status=thread.status,
         createdAt=thread.created_at,
         updatedAt=thread.updated_at,
+        modelOverride=thread.model_override,
+        toolGroupsOverride=thread.tool_groups_override,
     )
 
 

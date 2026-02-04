@@ -1,5 +1,5 @@
 import type { FC } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { AlertTriangle, CheckCircle2, SlidersHorizontal } from "lucide-react";
 
 import type { ProfilesResponse } from "@agentic-ai-playground/api-client";
@@ -18,6 +18,8 @@ export const SettingsPanel: FC<{ profiles: ProfilesResponse | null; runMode: str
     defaultModel,
     toolGroups,
     profileDefaults,
+    inferenceProfiles,
+    warnings,
     modelOverride,
     toolGroupsOverride,
     setModelOverride,
@@ -28,11 +30,10 @@ export const SettingsPanel: FC<{ profiles: ProfilesResponse | null; runMode: str
   const { resources, enabledSkills, enabledPrompts, setEnabledSkills, setEnabledPrompts } =
     useResources();
 
-  const [toolOverrideEnabled, setToolOverrideEnabled] = useState(false);
-
   const currentProfile = profiles?.profiles?.find((profile) => profile.id === runMode);
   const currentDefaults = profileDefaults.find((profile) => profile.profileId === runMode);
   const isSingleMode = currentProfile?.entrypointType === "single";
+  const toolOverrideEnabled = toolGroupsOverride !== null;
 
   const modelOptions = useMemo(() => {
     const options = models.slice();
@@ -40,9 +41,25 @@ export const SettingsPanel: FC<{ profiles: ProfilesResponse | null; runMode: str
     return options;
   }, [models]);
 
-  useEffect(() => {
-    setToolOverrideEnabled(toolGroupsOverride !== null);
-  }, [toolGroupsOverride]);
+  const inferenceProfileOptions = useMemo(() => {
+    return (inferenceProfiles ?? [])
+      .map((profile) => {
+        const value = profile.inferenceProfileArn || profile.inferenceProfileId || "";
+        const labelBase = profile.name || profile.inferenceProfileId || profile.inferenceProfileArn || "Inference profile";
+        const statusLabel = profile.status ? ` (${profile.status})` : "";
+        return value
+          ? { value, label: `${labelBase}${statusLabel}` }
+          : null;
+      })
+      .filter((entry): entry is { value: string; label: string } => Boolean(entry));
+  }, [inferenceProfiles]);
+  const allowedOverrideValues = useMemo(() => {
+    return new Set([
+      ...modelOptions,
+      ...inferenceProfileOptions.map((profile) => profile.value),
+    ]);
+  }, [modelOptions, inferenceProfileOptions]);
+  const isInvalidOverride = Boolean(modelOverride) && !allowedOverrideValues.has(modelOverride as string);
 
   const activeToolGroups = useMemo(() => {
     if (toolGroupsOverride) {
@@ -91,26 +108,58 @@ export const SettingsPanel: FC<{ profiles: ProfilesResponse | null; runMode: str
 
       {error && <p className={styles.panelHint}>{error}</p>}
       {isLoading && <p className={styles.panelHint}>Loading settings...</p>}
+      {!isLoading && warnings.length > 0 && (
+        <div className={styles.notice}>
+          <AlertTriangle aria-hidden="true" />
+          <div>
+            {warnings.map((warning) => (
+              <p key={warning}>{warning}</p>
+            ))}
+          </div>
+        </div>
+      )}
 
       {!isLoading && (
         <div className={styles.section}>
           <label className={styles.field}>
             <span>Model override</span>
             <select
-              value={modelOverride ?? ""}
+              value={modelOverride && allowedOverrideValues.has(modelOverride) ? modelOverride : ""}
               onChange={(event) => setModelOverride(event.target.value || null)}
             >
               <option value="">Use profile default</option>
-              {modelOptions.map((model) => (
-                <option key={model} value={model}>
-                  {model}
-                </option>
-              ))}
+              <optgroup label="On-demand models">
+                {modelOptions.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </optgroup>
+              {inferenceProfileOptions.length > 0 && (
+                <optgroup label="Inference profiles">
+                  {inferenceProfileOptions.map((profile) => (
+                    <option key={profile.value} value={profile.value}>
+                      {profile.label}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
             </select>
             {defaultModel && (
               <span className={styles.fieldHint}>Default: {defaultModel}</span>
             )}
           </label>
+          {isInvalidOverride && (
+            <div className={styles.notice}>
+              <AlertTriangle aria-hidden="true" />
+              <div>
+                <p>Selected override is not in the allowed list.</p>
+                <button type="button" onClick={() => setModelOverride(null)}>
+                  Clear override
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -121,7 +170,6 @@ export const SettingsPanel: FC<{ profiles: ProfilesResponse | null; runMode: str
             checked={toolOverrideEnabled}
             onChange={(event) => {
               const enabled = event.target.checked;
-              setToolOverrideEnabled(enabled);
               if (!enabled) {
                 setToolGroupsOverride(null);
               } else if (toolGroupsOverride === null) {
@@ -134,7 +182,7 @@ export const SettingsPanel: FC<{ profiles: ProfilesResponse | null; runMode: str
         {!isSingleMode && toolOverrideEnabled && (
           <div className={styles.notice}>
             <AlertTriangle aria-hidden="true" />
-            Tool overrides apply only to single-agent profiles.
+            Tool overrides apply across all modes and affect every agent in graph/swarm.
           </div>
         )}
         {toolOverrideEnabled && (

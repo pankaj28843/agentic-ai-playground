@@ -1,18 +1,12 @@
 import { useAssistantApi, useAssistantState, ComposerPrimitive } from "@assistant-ui/react";
 import { ArrowUp, CornerDownLeft, CornerUpLeft, Square } from "lucide-react";
 import type { FC } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect } from "react";
+import { useMachine } from "@xstate/react";
 
 import { useResources } from "../contexts/ResourcesContext";
-import { parseCommand, resolveCommand } from "../utils/commands";
+import { composerQueueMachine, type QueueMode } from "../state/composerQueueMachine";
 import styles from "./ThreadView.module.css";
-
-type QueueMode = "steer" | "follow-up";
-
-interface QueueItem {
-  text: string;
-  mode: QueueMode;
-}
 
 export const QueuedComposerControls: FC = () => {
   const api = useAssistantApi();
@@ -20,59 +14,52 @@ export const QueuedComposerControls: FC = () => {
   const composerText = useAssistantState(({ composer }) => composer.text);
   const attachmentCount = useAssistantState(({ composer }) => composer.attachments.length);
   const { resources, enabledPrompts, enabledSkills } = useResources();
-
-  const [queue, setQueue] = useState<QueueItem[]>([]);
-  const queueRef = useRef(queue);
-  const wasRunningRef = useRef(isRunning);
-  const [warning, setWarning] = useState<string | null>(null);
-
-  useEffect(() => {
-    queueRef.current = queue;
-  }, [queue]);
+  const [state, send] = useMachine(composerQueueMachine, { input: {} });
+  const { queue, warning, pendingSend, pendingReset, cancelRequested } = state.context;
 
   const enqueue = useCallback(
     (mode: QueueMode) => {
-      if (!composerText && attachmentCount === 0) {
-        return;
-      }
-      if (attachmentCount > 0) {
-        setWarning("Attachments cannot be queued yet.");
-        return;
-      }
-      const parsed = parseCommand(composerText);
-      const enabled = parsed?.type === "prompt" ? enabledPrompts : enabledSkills;
-      const commandResolution = resolveCommand(composerText, resources, enabled);
-      if (commandResolution.error) {
-        setWarning(commandResolution.error);
-        return;
-      }
-      setWarning(null);
-      setQueue((prev) => [
-        ...prev,
-        { text: commandResolution.applied ? commandResolution.resolvedText : composerText, mode },
-      ]);
-      api.composer().reset();
-      if (mode === "steer") {
-        api.thread().cancelRun();
-      }
+      send({
+        type: "QUEUE.REQUEST",
+        mode,
+        composerText,
+        attachmentCount,
+        resources,
+        enabledPrompts,
+        enabledSkills,
+      });
     },
-    [api, attachmentCount, composerText, enabledPrompts, enabledSkills, resources],
+    [attachmentCount, composerText, enabledPrompts, enabledSkills, resources, send],
   );
 
   useEffect(() => {
-    const wasRunning = wasRunningRef.current;
-    wasRunningRef.current = isRunning;
-    if (!wasRunning || isRunning) {
+    send({ type: "ASSISTANT.RUNNING.CHANGED", isRunning });
+  }, [isRunning, send]);
+
+  useEffect(() => {
+    if (!pendingReset) {
       return;
     }
-    const next = queueRef.current[0];
-    if (!next) {
+    api.composer().reset();
+    send({ type: "RESET.ACK" });
+  }, [api, pendingReset, send]);
+
+  useEffect(() => {
+    if (!cancelRequested) {
       return;
     }
-    setQueue((prev) => prev.slice(1));
-    api.composer().setText(next.text);
+    api.thread().cancelRun();
+    send({ type: "CANCEL.ACK" });
+  }, [api, cancelRequested, send]);
+
+  useEffect(() => {
+    if (!pendingSend) {
+      return;
+    }
+    api.composer().setText(pendingSend.text);
     api.composer().send();
-  }, [api, isRunning]);
+    send({ type: "SEND.DISPATCHED" });
+  }, [api, pendingSend, send]);
 
   return (
     <div className={styles.composerQueueControls}>
@@ -81,18 +68,14 @@ export const QueuedComposerControls: FC = () => {
           className={styles.composerSend}
           type="button"
           onClick={() => {
-            const parsed = parseCommand(composerText);
-            const enabled = parsed?.type === "prompt" ? enabledPrompts : enabledSkills;
-            const commandResolution = resolveCommand(composerText, resources, enabled);
-            if (commandResolution.error) {
-              setWarning(commandResolution.error);
-              return;
-            }
-            setWarning(null);
-            if (commandResolution.applied) {
-              api.composer().setText(commandResolution.resolvedText);
-            }
-            api.composer().send();
+            send({
+              type: "SEND.REQUEST",
+              composerText,
+              attachmentCount,
+              resources,
+              enabledPrompts,
+              enabledSkills,
+            });
           }}
         >
           <ArrowUp aria-hidden="true" />

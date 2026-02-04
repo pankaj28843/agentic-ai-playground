@@ -1,5 +1,5 @@
 import type { CSSProperties, FC } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useAssistantApi } from "@assistant-ui/react";
 import { ChevronRight, RefreshCw, X } from "lucide-react";
 
@@ -17,29 +17,19 @@ export const SessionTreePanel: FC = () => {
     tree,
     entriesById,
     activeEntryId,
+    labelDraft,
     setActiveEntryId,
+    setLabelDraft,
     refresh,
     labelEntry,
     isLoading,
     error,
   } = useSessionTree();
-  const [labelValue, setLabelValue] = useState("");
 
   const activeEntry = activeEntryId ? entriesById[activeEntryId] : null;
   const orderedRoots = useMemo(() => tree?.roots ?? [], [tree]);
 
-  useEffect(() => {
-    if (!activeEntry) {
-      setLabelValue("");
-      return;
-    }
-    setLabelValue(activeEntry.label ?? "");
-  }, [activeEntry]);
-
-  const handleInsertSummary = (summary?: string | null) => {
-    if (!summary) {
-      return;
-    }
+  const handleInsertSummary = (summary: string) => {
     api.composer().setText(summary.trim());
   };
 
@@ -51,6 +41,8 @@ export const SessionTreePanel: FC = () => {
     const children = tree?.children?.[entryId] ?? [];
     const isActive = entryId === activeEntryId;
     const title = buildTitle(entry);
+
+    const summary = entry.summary;
 
     return (
       <div key={entryId} className={styles.nodeWrapper} style={{ "--depth": depth } as CSSProperties}>
@@ -65,11 +57,11 @@ export const SessionTreePanel: FC = () => {
             <span className={styles.nodeMeta}>{entry.type}</span>
           </div>
         </button>
-        {entry.summary && (
+        {summary && (
           <button
             type="button"
             className={styles.nodeAction}
-            onClick={() => handleInsertSummary(entry.summary)}
+            onClick={() => handleInsertSummary(summary)}
           >
             Insert summary
           </button>
@@ -123,15 +115,15 @@ export const SessionTreePanel: FC = () => {
           <label className={styles.labelRow}>
             <span>Label</span>
             <input
-              value={labelValue}
-              onChange={(event) => setLabelValue(event.target.value)}
+              value={labelDraft}
+              onChange={(event) => setLabelDraft(event.target.value)}
               placeholder="Add a checkpoint name"
             />
           </label>
           <button
             type="button"
             className={styles.labelSave}
-            onClick={() => void labelEntry(activeEntry.id, labelValue || null)}
+            onClick={() => void labelEntry(activeEntry.id, labelDraft || null)}
           >
             Save label
           </button>

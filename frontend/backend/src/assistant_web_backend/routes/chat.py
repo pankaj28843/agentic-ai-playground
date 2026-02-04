@@ -8,13 +8,15 @@ from typing import TYPE_CHECKING, Any
 
 from agent_toolkit.config import load_settings
 from agent_toolkit.telemetry import EvalConfig, OnlineEvaluator
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
+from assistant_web_backend.dependencies import get_storage
 from assistant_web_backend.models.messages import ContentPart, MessagePayload, RichStreamChunk
 from assistant_web_backend.models.threads import ChatRunRequest
 from assistant_web_backend.services.runtime import RuntimeService
 from assistant_web_backend.services.streaming import StreamState
+from assistant_web_backend.storage import Storage
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator
@@ -46,15 +48,16 @@ def _schedule_background_task(coro: Any) -> None:
 
 
 router = APIRouter(prefix="/api", tags=["chat"])
+_storage_dep = Depends(get_storage)
 
 
 @router.post("/chat/run")
-def run_chat(payload: ChatRunRequest) -> StreamingResponse:
+def run_chat(payload: ChatRunRequest, storage: Storage = _storage_dep) -> StreamingResponse:
     """Stream a chat response for the provided messages."""
     thread_id = payload.thread_id or ""
 
     async def stream() -> AsyncGenerator[bytes]:
-        async for chunk in _run_stream(thread_id, payload):
+        async for chunk in _run_stream(thread_id, payload, storage):
             yield chunk
 
     return StreamingResponse(stream(), media_type="application/jsonl")
@@ -77,9 +80,21 @@ def _extract_message_id(messages: list[MessagePayload]) -> str | None:
     return None
 
 
+def _format_agent_error(exc: Exception) -> str:
+    """Return a user-friendly error message for known provider failures."""
+    message = str(exc)
+    if "inference profile" in message.lower() or "on-demand throughput isn" in message.lower():
+        return (
+            "Agent error: This model requires an inference profile for on-demand throughput. "
+            "Select an inference profile from the Model override dropdown and retry."
+        )
+    return f"Agent error: {message}"
+
+
 async def _run_stream(  # noqa: C901, PLR0912
     thread_id: str,
     payload: ChatRunRequest,
+    storage: Storage,
 ) -> AsyncGenerator[bytes]:
     """Run the agent stream and yield encoded chunks."""
     runtime = RuntimeService.get_runtime()
@@ -102,7 +117,7 @@ async def _run_stream(  # noqa: C901, PLR0912
     except (RuntimeError, ValueError) as e:
         logger.exception("Failed to resolve execution mode for profile '%s'", run_mode)
         yield _encode_rich_chunk(
-            [ContentPart(type="text", text=f"Agent error: {e}")],
+            [ContentPart(type="text", text=_format_agent_error(e))],
             run_mode=run_mode,
         )
         return
@@ -137,6 +152,14 @@ async def _run_stream(  # noqa: C901, PLR0912
     )
 
     message_id = _extract_message_id(payload.messages) or ""
+
+    if thread_id:
+        storage.create_thread(thread_id)
+        storage.update_thread_overrides(
+            thread_id,
+            payload.model_override,
+            payload.tool_groups_override,
+        )
     invocation_state = runtime.build_invocation_state(
         "",
         thread_id or f"thread-{run_mode}",
@@ -192,7 +215,7 @@ async def _run_stream(  # noqa: C901, PLR0912
             _schedule_background_task(_run_evaluation(user_input, response_text, captured_trace_id))
     except Exception as exc:
         logger.exception("Agent stream failed")
-        yield _encode_rich_chunk([ContentPart(type="text", text=f"Agent error: {exc}")])
+        yield _encode_rich_chunk([ContentPart(type="text", text=_format_agent_error(exc))])
 
 
 async def _run_evaluation(

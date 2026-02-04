@@ -9,22 +9,21 @@ import logging
 import threading
 from typing import Any
 
+from agent_toolkit.runtime import AgentRuntime as _AgentRuntime
+
 logger = logging.getLogger(__name__)
 
 # Lazy import to avoid circular dependencies
-AgentRuntime: Any = None
+AgentRuntime: Any = _AgentRuntime
 
 
 def _load_runtime_class() -> Any:
     """Lazy load AgentRuntime to avoid import cycles."""
     global AgentRuntime  # noqa: PLW0603
     if AgentRuntime is None:
-        try:
-            from agent_toolkit.runtime import AgentRuntime as _AgentRuntime  # noqa: PLC0415
+        from agent_toolkit.runtime import AgentRuntime as _AgentRuntime  # noqa: PLC0415
 
-            AgentRuntime = _AgentRuntime
-        except ImportError:
-            pass
+        AgentRuntime = _AgentRuntime
     return AgentRuntime
 
 

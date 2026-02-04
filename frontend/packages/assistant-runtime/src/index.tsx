@@ -30,9 +30,24 @@ export const AssistantRuntimeProvider = ({
   runMode?: string;
   runOverrides?: RunOverrides;
 }) => {
+  const runModeRef = useRef(runMode);
+  const runOverridesRef = useRef(runOverrides);
+
+  useEffect(() => {
+    runModeRef.current = runMode;
+  }, [runMode]);
+
+  useEffect(() => {
+    runOverridesRef.current = runOverrides;
+  }, [runOverrides]);
+
   const runtime = useRemoteThreadListRuntime({
-    // eslint-disable-next-line react-hooks/rules-of-hooks -- hook factory invoked by useRemoteThreadListRuntime
-    runtimeHook: () => useLocalRuntime(createChatAdapter(runMode, runOverrides)),
+    runtimeHook: () => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks -- hook factory invoked by useRemoteThreadListRuntime
+      return useLocalRuntime(
+        createChatAdapter(() => runModeRef.current, () => runOverridesRef.current),
+      );
+    },
     adapter: threadListAdapter,
   });
 

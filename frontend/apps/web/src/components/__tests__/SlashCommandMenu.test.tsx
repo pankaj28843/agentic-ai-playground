@@ -1,8 +1,8 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import type { ResourcesResponse } from "@agentic-ai-playground/api-client";
-import { ResourcesProvider } from "../../contexts/ResourcesContext";
+import type { ApiClient, ResourcesResponse } from "@agentic-ai-playground/api-client";
+import { AppDataProvider } from "../../state/appDataContext";
 import { SlashCommandMenu } from "../SlashCommandMenu";
 
 const resources: ResourcesResponse = {
@@ -41,24 +41,32 @@ vi.mock("@assistant-ui/react", () => {
 });
 
 describe("SlashCommandMenu", () => {
-  it("renders prompt items and sets text on click", () => {
+  it("renders prompt items and sets text on click", async () => {
+    const apiClient = {
+      listProfiles: vi.fn().mockResolvedValue({
+        profiles: [],
+        runModes: [],
+        defaultRunMode: null,
+      }),
+      getSettings: vi.fn().mockResolvedValue({
+        models: [],
+        defaultModel: null,
+        toolGroups: [],
+        profileDefaults: [],
+        inferenceProfiles: [],
+        warnings: [],
+      }),
+      listResources: vi.fn().mockResolvedValue(resources),
+      getPhoenixConfig: vi.fn().mockResolvedValue({ enabled: false }),
+    } as unknown as ApiClient;
+
     render(
-      <ResourcesProvider
-        value={{
-          resources,
-          isLoading: false,
-          error: null,
-          enabledSkills: ["review"],
-          enabledPrompts: ["summarize"],
-          setEnabledSkills: () => undefined,
-          setEnabledPrompts: () => undefined,
-        }}
-      >
+      <AppDataProvider apiClient={apiClient}>
         <SlashCommandMenu />
-      </ResourcesProvider>,
+      </AppDataProvider>,
     );
 
-    const item = screen.getByRole("button", { name: /summarize/i });
+    const item = await screen.findByRole("button", { name: /summarize/i });
     fireEvent.click(item);
 
     expect(composerApi.setText).toHaveBeenCalledWith("Summarize content");

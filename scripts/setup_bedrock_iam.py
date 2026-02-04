@@ -39,12 +39,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-try:
-    import boto3
-    from botocore.exceptions import ClientError, NoCredentialsError, ProfileNotFound
-except ImportError:
-    print("ERROR: boto3 is required. Install with: pip install boto3")
-    sys.exit(1)
+import boto3
+from botocore.exceptions import ClientError, NoCredentialsError, ProfileNotFound
 
 # Note: LoginRefreshRequired exception is detected via string matching in exception handlers
 # rather than importing directly, for compatibility with older boto3 versions

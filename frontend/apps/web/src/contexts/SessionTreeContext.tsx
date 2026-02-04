@@ -1,105 +1,60 @@
 import type { ReactNode } from "react";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
+
 import { useThreadList } from "@assistant-ui/react";
-import type { SessionEntryView, SessionTreeResponse } from "@agentic-ai-playground/api-client";
 import { ApiClient } from "@agentic-ai-playground/api-client";
 import { setActiveSessionBranch } from "@agentic-ai-playground/assistant-runtime";
+import { createActorContext } from "@xstate/react";
+
+import type { SessionEntryView, SessionTreeResponse } from "@agentic-ai-playground/api-client";
+import { sessionTreeMachine } from "../state/sessionTreeMachine";
 
 export type SessionTreeState = {
   threadId: string | null;
   tree: SessionTreeResponse | null;
   entriesById: Record<string, SessionEntryView>;
   activeEntryId: string | null;
+  labelDraft: string;
   setActiveEntryId: (entryId: string | null) => void;
+  setLabelDraft: (value: string) => void;
   refresh: () => Promise<void>;
   labelEntry: (entryId: string, label: string | null) => Promise<void>;
   isLoading: boolean;
   error: string | null;
 };
 
-const SessionTreeContext = createContext<SessionTreeState>({
-  threadId: null,
-  tree: null,
-  entriesById: {},
-  activeEntryId: null,
-  setActiveEntryId: () => undefined,
-  refresh: async () => undefined,
-  labelEntry: async () => undefined,
-  isLoading: false,
-  error: null,
-});
+const SessionTreeActorContext = createActorContext(sessionTreeMachine);
 
 export const SessionTreeProvider = ({ children }: { children: ReactNode }) => {
-  const mainThreadId = useThreadList((state) => state.mainThreadId);
-  const threadItems = useThreadList((state) => state.threadItems);
-  const [tree, setTree] = useState<SessionTreeResponse | null>(null);
-  const [activeEntryId, setActiveEntryId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
   const apiClient = useMemo(() => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
     return new ApiClient(baseUrl);
   }, []);
 
-  const threadId = useMemo(() => {
-    if (!mainThreadId) {
-      return null;
-    }
-    const remoteId = threadItems[mainThreadId]?.remoteId ?? mainThreadId;
-    if (!remoteId || remoteId.startsWith("__")) {
-      return null;
-    }
-    return remoteId;
-  }, [mainThreadId, threadItems]);
+  return (
+    <SessionTreeActorContext.Provider
+      logic={sessionTreeMachine}
+      options={{ input: { apiClient } }}
+    >
+      <SessionTreeBridge />
+      {children}
+    </SessionTreeActorContext.Provider>
+  );
+};
 
-  const entriesById = useMemo(() => {
-    if (!tree) {
-      return {};
-    }
-    return tree.entries.reduce<Record<string, SessionEntryView>>((acc, entry) => {
-      acc[entry.id] = entry;
-      return acc;
-    }, {});
-  }, [tree]);
-
-  const fetchTree = useCallback(async () => {
-    if (!threadId) {
-      setTree(null);
-      setError(null);
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await apiClient.getSessionTree(threadId);
-      setTree(response);
-      setError(null);
-    } catch (err) {
-      setTree(null);
-      setError(err instanceof Error ? err.message : "Failed to load session tree");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [apiClient, threadId]);
-
-  const labelEntry = useCallback(
-    async (entryId: string, label: string | null) => {
-      if (!threadId) {
-        return;
-      }
-      await apiClient.labelSessionEntry(threadId, entryId, label);
-      await fetchTree();
-    },
-    [apiClient, fetchTree, threadId],
+const SessionTreeBridge = () => {
+  const actorRef = SessionTreeActorContext.useActorRef();
+  const threadId = useThreadId();
+  const activeEntryId = SessionTreeActorContext.useSelector(
+    (state) => state.context.activeEntryId,
   );
 
   useEffect(() => {
-    void fetchTree();
-  }, [fetchTree]);
+    actorRef.send({ type: "THREAD.SET", threadId });
+  }, [actorRef, threadId]);
 
   useEffect(() => {
     if (!threadId) {
-      setActiveEntryId(null);
       setActiveSessionBranch(null);
       return;
     }
@@ -110,27 +65,64 @@ export const SessionTreeProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [activeEntryId, threadId]);
 
-  useEffect(() => {
-    setActiveEntryId(null);
-    setActiveSessionBranch(null);
-  }, [threadId]);
-
-  const value = useMemo<SessionTreeState>(
-    () => ({
-      threadId,
-      tree,
-      entriesById,
-      activeEntryId,
-      setActiveEntryId,
-      refresh: fetchTree,
-      labelEntry,
-      isLoading,
-      error,
-    }),
-    [activeEntryId, entriesById, error, fetchTree, isLoading, labelEntry, threadId, tree],
-  );
-
-  return <SessionTreeContext.Provider value={value}>{children}</SessionTreeContext.Provider>;
+  return null;
 };
 
-export const useSessionTree = () => useContext(SessionTreeContext);
+const useThreadId = () => {
+  const mainThreadId = useThreadList((state) => state.mainThreadId);
+  const threadItems = useThreadList((state) => state.threadItems);
+
+  return useMemo(() => {
+    if (!mainThreadId) {
+      return null;
+    }
+    const remoteId = threadItems[mainThreadId]?.remoteId ?? mainThreadId;
+    if (!remoteId || remoteId.startsWith("__")) {
+      return null;
+    }
+    return remoteId;
+  }, [mainThreadId, threadItems]);
+};
+
+export const useSessionTree = () => {
+  const actorRef = SessionTreeActorContext.useActorRef();
+  const threadId = SessionTreeActorContext.useSelector((state) => state.context.threadId);
+  const tree = SessionTreeActorContext.useSelector((state) => state.context.tree);
+  const entriesById = SessionTreeActorContext.useSelector((state) => state.context.entriesById);
+  const activeEntryId = SessionTreeActorContext.useSelector(
+    (state) => state.context.activeEntryId,
+  );
+  const labelDraft = SessionTreeActorContext.useSelector((state) => state.context.labelDraft);
+  const isLoading = SessionTreeActorContext.useSelector((state) => state.context.isLoading);
+  const error = SessionTreeActorContext.useSelector((state) => state.context.error);
+
+  const setActiveEntryId = (entryId: string | null) => {
+    actorRef.send({ type: "ENTRY.SET_ACTIVE", entryId });
+  };
+
+  const setLabelDraft = (value: string) => {
+    actorRef.send({ type: "ENTRY.LABEL.DRAFT.SET", value });
+  };
+
+  const refresh = async () => {
+    actorRef.send({ type: "TREE.REFRESH" });
+  };
+
+  const labelEntry = async (entryId: string, label: string | null) => {
+    actorRef.send({ type: "ENTRY.LABEL", entryId, label });
+  };
+
+  return {
+    threadId,
+    tree,
+    entriesById,
+    activeEntryId,
+    labelDraft,
+    setActiveEntryId,
+    setLabelDraft,
+    refresh,
+    labelEntry,
+    isLoading,
+    error,
+  };
+};

@@ -25,6 +25,16 @@ class ToolGroupSummary(ApiModel):
     capabilities: list[str] = Field(default_factory=list)
 
 
+class InferenceProfileSummary(ApiModel):
+    """Bedrock inference profile summary for settings UI."""
+
+    inference_profile_id: str | None = Field(default=None, alias="inferenceProfileId")
+    inference_profile_arn: str | None = Field(default=None, alias="inferenceProfileArn")
+    name: str | None = None
+    status: str | None = None
+    type: str | None = None
+
+
 class ProfileDefaults(ApiModel):
     """Defaults for a public profile."""
 
@@ -40,4 +50,7 @@ class SettingsResponse(ApiModel):
     default_model: str | None = Field(default=None, alias="defaultModel")
     tool_groups: list[ToolGroupSummary] = Field(default_factory=list, alias="toolGroups")
     profile_defaults: list[ProfileDefaults] = Field(default_factory=list, alias="profileDefaults")
+    inference_profiles: list[InferenceProfileSummary] = Field(
+        default_factory=list, alias="inferenceProfiles"
+    )
     warnings: list[str] = Field(default_factory=list)

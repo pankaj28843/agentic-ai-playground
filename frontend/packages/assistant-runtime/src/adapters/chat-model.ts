@@ -12,17 +12,23 @@ const baseUrl =
 
 const api = new ApiClient(baseUrl);
 
-// Content part types that assistant-ui natively supports for rendering
-// Other types (like agent-event for multi-agent tracing) are filtered out
-const ASSISTANT_UI_SUPPORTED_TYPES = new Set(["text", "tool-call", "reasoning"]);
+// Content part types that assistant-ui natively supports for rendering.
+// Use data parts for trace-only payloads (agent-event) so we can inspect them later
+// without breaking assistant-ui rendering.
+const ASSISTANT_UI_SUPPORTED_TYPES = new Set(["text", "tool-call", "reasoning", "data"]);
 
 /**
  * Create a ChatModelAdapter for streaming responses from the backend.
  *
  * @param runMode - Public profile name (run mode)
  */
-export const createChatAdapter = (runMode?: string, overrides?: RunOverrides): ChatModelAdapter => ({
+export const createChatAdapter = (
+  getRunMode: () => string | undefined,
+  getOverrides: () => RunOverrides | undefined,
+): ChatModelAdapter => ({
   async *run({ messages, abortSignal, unstable_threadId }): AsyncGenerator<ChatModelRunResult> {
+    const runMode = getRunMode();
+    const overrides = getOverrides();
     const response = await api.runChat(
       {
         messages: messages.map(toApiMessage),
@@ -115,10 +121,17 @@ export const createChatAdapter = (runMode?: string, overrides?: RunOverrides): C
           }
 
           if (payload.content && Array.isArray(payload.content)) {
-            // Filter to only types that assistant-ui supports
-            // Note: agent-event types are filtered here but the backend still
-            // tracks multi-agent events for future Phoenix/observability integration
-            const supportedContent = payload.content.filter(
+            const mappedContent = payload.content.map((part) => {
+              if (part.type === "agent-event") {
+                return {
+                  type: "data",
+                  name: "agent-event",
+                  data: part,
+                };
+              }
+              return part;
+            });
+            const supportedContent = mappedContent.filter(
               (part) => ASSISTANT_UI_SUPPORTED_TYPES.has(part.type)
             );
             if (supportedContent.length > 0) {
