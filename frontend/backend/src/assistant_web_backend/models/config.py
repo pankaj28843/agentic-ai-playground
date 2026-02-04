@@ -16,8 +16,41 @@ class PhoenixConfigResponse(ApiModel):
     project_id: str | None = Field(default=None, alias="projectId")
 
 
+class ToolGroupSummary(ApiModel):
+    """Tool group summary for settings UI."""
+
+    name: str
+    description: str
+    tools: list[str]
+    capabilities: list[str] = Field(default_factory=list)
+
+
+class InferenceProfileSummary(ApiModel):
+    """Bedrock inference profile summary for settings UI."""
+
+    inference_profile_id: str | None = Field(default=None, alias="inferenceProfileId")
+    inference_profile_arn: str | None = Field(default=None, alias="inferenceProfileArn")
+    name: str | None = None
+    status: str | None = None
+    type: str | None = None
+
+
+class ProfileDefaults(ApiModel):
+    """Defaults for a public profile."""
+
+    profile_id: str = Field(alias="profileId")
+    model: str | None = None
+    tool_groups: list[str] = Field(default_factory=list, alias="toolGroups")
+
+
 class SettingsResponse(ApiModel):
     """Runtime settings response."""
 
-    default_profile: str | None = Field(default=None, alias="defaultProfile")
-    default_run_mode: str = Field(default="quick", alias="defaultRunMode")
+    models: list[str]
+    default_model: str | None = Field(default=None, alias="defaultModel")
+    tool_groups: list[ToolGroupSummary] = Field(default_factory=list, alias="toolGroups")
+    profile_defaults: list[ProfileDefaults] = Field(default_factory=list, alias="profileDefaults")
+    inference_profiles: list[InferenceProfileSummary] = Field(
+        default_factory=list, alias="inferenceProfiles"
+    )
+    warnings: list[str] = Field(default_factory=list)

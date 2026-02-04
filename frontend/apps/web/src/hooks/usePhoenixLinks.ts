@@ -3,7 +3,8 @@
  */
 
 import { useMemo } from "react";
-import { usePhoenix } from "../App";
+
+import { useAppDataSelector } from "../state/appDataContext";
 
 export interface PhoenixDeepLinks {
   /** Whether Phoenix is enabled and configured */
@@ -26,7 +27,7 @@ export interface PhoenixDeepLinks {
  * @returns Object with enabled flag and URL generators
  */
 export function usePhoenixLinks(traceId?: string, sessionId?: string): PhoenixDeepLinks {
-  const { config } = usePhoenix();
+  const config = useAppDataSelector((state) => state.context.phoenixConfig);
 
   const enabled = config?.enabled ?? false;
   const baseUrl = config?.baseUrl;
@@ -53,13 +54,13 @@ export function usePhoenixLinks(traceId?: string, sessionId?: string): PhoenixDe
     };
   }, [enabled, baseUrl, projectId]);
 
-  const traceUrl = traceId ? getTraceUrl(traceId) : null;
-  const sessionUrl = sessionId ? getSessionUrl(sessionId) : null;
+  const resolvedTraceUrl = traceId ? getTraceUrl(traceId) : null;
+  const resolvedSessionUrl = sessionId ? getSessionUrl(sessionId) : null;
 
   return {
     enabled,
-    traceUrl,
-    sessionUrl,
+    traceUrl: resolvedTraceUrl,
+    sessionUrl: resolvedSessionUrl,
     getTraceUrl,
     getSessionUrl,
   };

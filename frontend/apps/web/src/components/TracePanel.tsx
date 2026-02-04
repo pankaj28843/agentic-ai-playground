@@ -17,6 +17,8 @@ export type TraceItem =
       toolName: string;
       args: Record<string, unknown>;
       result?: unknown;
+      resultFull?: unknown;
+      resultTruncated?: boolean;
       status: string;
       isError?: boolean;
       timestamp?: string;
@@ -62,6 +64,8 @@ interface TracePanelProps {
   runtime?: RuntimeInfo; // Runtime metadata (mode, profile, model)
   expandedItems: Set<number>;
   onToggleExpanded: (index: number) => void;
+  fullOutputItems: Set<number>;
+  onToggleFullOutput: (index: number) => void;
 }
 
 /**
@@ -69,18 +73,14 @@ interface TracePanelProps {
  */
 function formatElapsed(startTime: string | undefined, itemTime: string | undefined): string {
   if (!startTime || !itemTime) return "";
-  try {
-    const start = new Date(startTime).getTime();
-    const item = new Date(itemTime).getTime();
-    const elapsedMs = item - start;
-    if (Number.isNaN(elapsedMs) || elapsedMs < 0) return "";
-    const minutes = Math.floor(elapsedMs / 60000);
-    const seconds = Math.floor((elapsedMs % 60000) / 1000);
-    const ms = elapsedMs % 1000;
-    return `T+${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
-  } catch {
-    return "";
-  }
+  const start = new Date(startTime).getTime();
+  const item = new Date(itemTime).getTime();
+  const elapsedMs = item - start;
+  if (Number.isNaN(elapsedMs) || elapsedMs < 0) return "";
+  const minutes = Math.floor(elapsedMs / 60000);
+  const seconds = Math.floor((elapsedMs % 60000) / 1000);
+  const ms = elapsedMs % 1000;
+  return `T+${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
 }
 
 const cx = (...classes: Array<string | false | null | undefined>) => classes.filter(Boolean).join(" ");
@@ -95,6 +95,8 @@ export const TracePanel: FC<TracePanelProps> = ({
   runtime,
   expandedItems,
   onToggleExpanded,
+  fullOutputItems,
+  onToggleFullOutput,
 }) => {
   // Sort items chronologically by timestamp
   const sortedItems = useMemo(() => {
@@ -223,6 +225,8 @@ export const TracePanel: FC<TracePanelProps> = ({
                 startTime={startTime}
                 expanded={expandedItems.has(index)}
                 onToggle={() => onToggleExpanded(index)}
+                showFullOutput={fullOutputItems.has(index)}
+                onToggleFullOutput={() => onToggleFullOutput(index)}
               />
             ))
           )}
@@ -268,7 +272,9 @@ const TraceItemView: FC<{
   startTime?: string;
   expanded: boolean;
   onToggle: () => void;
-}> = ({ item, startTime, expanded, onToggle }) => {
+  showFullOutput: boolean;
+  onToggleFullOutput: () => void;
+}> = ({ item, startTime, expanded, onToggle, showFullOutput, onToggleFullOutput }) => {
   const elapsed = formatElapsed(startTime, item.timestamp);
 
   if (item.type === "thinking") {
@@ -411,7 +417,8 @@ const TraceItemView: FC<{
     return formatted.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
   };
 
-  const resultText = item.result !== undefined ? formatResult(item.result) : null;
+  const resolvedResult = showFullOutput && item.resultFull !== undefined ? item.resultFull : item.result;
+  const resultText = resolvedResult !== undefined ? formatResult(resolvedResult) : null;
   const toolStatusClass =
     item.status === "complete"
       ? styles.traceItemStatusComplete
@@ -455,6 +462,15 @@ const TraceItemView: FC<{
           {resultText && (
             <div className={styles.traceSection}>
               <span className={styles.traceSectionLabel}>Result</span>
+              {item.resultTruncated && item.resultFull !== undefined && (
+                <button
+                  type="button"
+                  className={styles.traceResultToggle}
+                  onClick={onToggleFullOutput}
+                >
+                  {showFullOutput ? "Show truncated" : "Show full output"}
+                </button>
+              )}
               <HighlightedCode code={resultText} className={styles.traceResult} />
             </div>
           )}

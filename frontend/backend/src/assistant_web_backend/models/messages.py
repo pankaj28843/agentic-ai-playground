@@ -27,6 +27,7 @@ class MessagePayload(ApiModel):
     entrypoint_reference: str | None = Field(default=None, alias="entrypointReference")
     model_id: str | None = Field(default=None, alias="modelId")
     phoenix_session_id: str | None = Field(default=None, alias="phoenixSessionId")
+    session_entry_id: str | None = Field(default=None, alias="sessionEntryId")
 
 
 class MessageAppendRequest(ApiModel):
@@ -41,6 +42,7 @@ class MessageAppendRequest(ApiModel):
     entrypoint_reference: str | None = Field(default=None, alias="entrypointReference")
     model_id: str | None = Field(default=None, alias="modelId")
     phoenix_session_id: str | None = Field(default=None, alias="phoenixSessionId")
+    parent_session_entry_id: str | None = Field(default=None, alias="parentSessionEntryId")
 
 
 class ThreadMessagesResponse(ApiModel):
@@ -83,6 +85,8 @@ class ContentPart(ApiModel):
     args: dict[str, Any] | None = None
     args_text: str | None = Field(default=None, alias="argsText")
     result: Any | None = None
+    result_full: Any | None = Field(default=None, alias="resultFull")
+    result_truncated: bool | None = Field(default=None, alias="resultTruncated")
     is_error: bool | None = Field(default=None, alias="isError")
     status: ToolCallStatus | None = None
     # Timestamp for chronological ordering in trace panel

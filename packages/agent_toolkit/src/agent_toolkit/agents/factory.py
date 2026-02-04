@@ -58,12 +58,7 @@ class AgentFactory:
             model_ref = self.settings.bedrock_model_id
 
         registry = self._get_model_registry()
-        try:
-            return registry.create_model(model_ref, overrides=overrides)
-        except ImportError as e:
-            # Optional provider not installed - re-raise with helpful message
-            msg = f"Cannot create model '{model_ref}': {e}"
-            raise ImportError(msg) from e
+        return registry.create_model(model_ref, overrides=overrides)
 
     def create_from_profile(
         self,

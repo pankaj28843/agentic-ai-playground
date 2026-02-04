@@ -5,6 +5,11 @@ description = "TechDocs MCP - tools discovered from remote server"
 tools = []  # Tools come directly from MCP server: find_tenant, list_tenants, describe_tenant, root_search, root_fetch, root_browse
 capabilities = ["read", "mcp:techdocs"]
 
+[tool_groups.subagents]
+description = "Subagent orchestration tools"
+tools = ["subagent"]
+capabilities = ["delegate"]
+
 # Strands Tools Groups - pre-built tools from strands-agents-tools package
 # These are "strands:" prefixed to distinguish from local tools
 
@@ -17,11 +22,6 @@ capabilities = ["basic"]
 description = "File operations - read, write, edit files"
 tools = ["strands:file_read", "strands:file_write", "strands:editor"]
 capabilities = ["read", "write"]
-
-[tool_groups.strands_shell]
-description = "Shell and environment tools"
-tools = ["strands:shell", "strands:environment"]
-capabilities = ["execute"]
 
 [tool_groups.strands_web]
 description = "Web and search tools"
@@ -40,7 +40,7 @@ capabilities = ["delegate"]
 
 [tool_groups.strands_code]
 description = "Code execution tools"
-tools = ["strands:python_repl", "strands:shell"]
+tools = ["strands:python_repl"]
 capabilities = ["execute"]
 
 [tool_groups.strands_media]

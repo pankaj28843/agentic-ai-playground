@@ -19,6 +19,7 @@ export type ThreadMessage = {
   entrypointReference?: string;
   modelId?: string;
   phoenixSessionId?: string;
+  sessionEntryId?: string;
 };
 
 export type ThreadSummary = {
@@ -33,6 +34,8 @@ export type ThreadDetail = {
   status: ThreadStatus;
   createdAt: string;
   updatedAt: string;
+  modelOverride?: string | null;
+  toolGroupsOverride?: string[] | null;
 };
 
 export type ThreadListResponse = {
@@ -60,6 +63,88 @@ export type PhoenixConfig = {
   baseUrl?: string;
   projectName?: string;
   projectId?: string;
+};
+
+export type SkillResource = {
+  name: string;
+  description: string;
+  content: string;
+  source: string;
+};
+
+export type PromptResource = {
+  name: string;
+  description: string;
+  content: string;
+  source: string;
+};
+
+export type ResourceDiagnostics = {
+  warnings: string[];
+};
+
+export type ResourcesResponse = {
+  skills: SkillResource[];
+  prompts: PromptResource[];
+  diagnostics: ResourceDiagnostics;
+};
+
+export type ToolGroupSummary = {
+  name: string;
+  description: string;
+  tools: string[];
+  capabilities: string[];
+};
+
+export type InferenceProfileSummary = {
+  inferenceProfileId?: string | null;
+  inferenceProfileArn?: string | null;
+  name?: string | null;
+  status?: string | null;
+  type?: string | null;
+};
+
+export type ProfileDefaults = {
+  profileId: string;
+  model?: string | null;
+  toolGroups: string[];
+};
+
+export type SettingsResponse = {
+  models: string[];
+  defaultModel?: string | null;
+  toolGroups: ToolGroupSummary[];
+  profileDefaults: ProfileDefaults[];
+  inferenceProfiles?: InferenceProfileSummary[];
+  warnings: string[];
+};
+
+export type SessionEntryView = {
+  id: string;
+  parentId?: string | null;
+  type: string;
+  timestamp: string;
+  label?: string | null;
+  messageRole?: string | null;
+  messagePreview?: string | null;
+  summary?: string | null;
+  customType?: string | null;
+  fromId?: string | null;
+  details?: Record<string, unknown> | null;
+};
+
+export type SessionTreeResponse = {
+  sessionId: string;
+  header: {
+    id: string;
+    timestamp: string;
+    cwd?: string | null;
+    parentSession?: string | null;
+  };
+  entries: SessionEntryView[];
+  roots: string[];
+  children: Record<string, string[]>;
+  leafId?: string | null;
 };
 
 /**
@@ -122,6 +207,8 @@ export type ChatRunRequest = {
   threadId?: string;
   profile?: string;
   runMode?: string;
+  modelOverride?: string | null;
+  toolGroupsOverride?: string[] | null;
 };
 
 /**
@@ -171,6 +258,14 @@ export class ApiClient {
     }
   }
 
+  async listResources(): Promise<ResourcesResponse> {
+    return this.getJson("/api/resources");
+  }
+
+  async getSettings(): Promise<SettingsResponse> {
+    return this.getJson("/api/settings");
+  }
+
   async createThread(): Promise<{ remoteId: string }> {
     return this.postJson("/api/threads", {});
   }
@@ -214,6 +309,7 @@ export class ApiClient {
     phoenixTraceId?: string,
     runtimeMetadata?: RuntimeMetadata,
     phoenixSessionId?: string,
+    parentSessionEntryId?: string,
   ): Promise<void> {
     requireRemoteId(remoteId, "appendMessage");
     await this.postJson(`/api/threads/${remoteId}/messages`, {
@@ -225,6 +321,24 @@ export class ApiClient {
       executionMode: runtimeMetadata?.executionMode,
       entrypointReference: runtimeMetadata?.entrypointReference,
       modelId: runtimeMetadata?.modelId,
+      parentSessionEntryId,
+    });
+  }
+
+  async getSessionTree(remoteId: string): Promise<SessionTreeResponse> {
+    requireRemoteId(remoteId, "getSessionTree");
+    return this.getJson(`/api/threads/${remoteId}/session-tree`);
+  }
+
+  async labelSessionEntry(
+    remoteId: string,
+    entryId: string,
+    label: string | null,
+  ): Promise<{ status: string; labelEntryId: string }> {
+    requireRemoteId(remoteId, "labelSessionEntry");
+    return this.postJson(`/api/threads/${remoteId}/session-tree/label`, {
+      entryId,
+      label,
     });
   }
 

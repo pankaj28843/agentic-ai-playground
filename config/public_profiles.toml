@@ -9,13 +9,21 @@ entrypoint_reference = "general"
 default = true
 metadata = { ui_order = 1, icon = "zap" }
 
+[public_profiles.plan]
+name = "Plan"
+description = "Read-only planning mode with allowlisted tools"
+entrypoint_type = "single"
+entrypoint_reference = "plan_mode"
+default = false
+metadata = { ui_order = 2, icon = "map" }
+
 [public_profiles.research]
 name = "Research"
 description = "Comprehensive research with parallel information gathering"
 entrypoint_type = "graph"
 entrypoint_reference = "research_graph"
 default = false
-metadata = { ui_order = 2, icon = "search" }
+metadata = { ui_order = 3, icon = "search" }
 
 [public_profiles.expert]
 name = "Expert"
@@ -23,4 +31,4 @@ description = "Deep analysis with planning, research, validation, and synthesis"
 entrypoint_type = "swarm"
 entrypoint_reference = "expert_swarm"
 default = false
-metadata = { ui_order = 3, icon = "brain" }
+metadata = { ui_order = 4, icon = "brain" }

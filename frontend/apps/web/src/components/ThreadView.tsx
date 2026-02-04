@@ -10,14 +10,12 @@ import {
 } from "@assistant-ui/react";
 import {
   ArrowDown,
-  ArrowUp,
   Check,
   Copy,
   FileText,
   Paperclip,
   Pencil,
   RefreshCw,
-  Square,
   X,
 } from "lucide-react";
 import type { FC } from "react";
@@ -25,6 +23,8 @@ import { useEffect, useId } from "react";
 
 import { useTrace } from "../contexts/TraceContext";
 import { MarkdownText } from "./MarkdownText";
+import { QueuedComposerControls } from "./QueuedComposerControls";
+import { SlashCommandMenu } from "./SlashCommandMenu";
 import { TraceIndicator, type TraceItem } from "./TracePanel";
 import styles from "./ThreadView.module.css";
 
@@ -83,24 +83,10 @@ const Composer: FC = () => {
           placeholder="Send a message..."
           rows={1}
         />
+        <SlashCommandMenu />
         <div className={styles.composerActions}>
           <ComposerAddAttachment />
-          <AuiIf condition={({ thread }) => !thread.isRunning}>
-            <ComposerPrimitive.Send asChild>
-              <button className={styles.composerSend} type="submit">
-                <ArrowUp aria-hidden="true" />
-                Send
-              </button>
-            </ComposerPrimitive.Send>
-          </AuiIf>
-          <AuiIf condition={({ thread }) => thread.isRunning}>
-            <ComposerPrimitive.Cancel asChild>
-              <button className={styles.composerCancel} type="button">
-                <Square aria-hidden="true" />
-                Stop
-              </button>
-            </ComposerPrimitive.Cancel>
-          </AuiIf>
+          <QueuedComposerControls />
         </div>
       </ComposerPrimitive.AttachmentDropzone>
     </ComposerPrimitive.Root>
@@ -174,6 +160,8 @@ const AssistantMessage: FC = () => {
         toolName: String(partWithStatus.toolName ?? "unknown"),
         args: parsedArgs,
         result: partWithStatus.result,
+        resultFull: (partWithStatus as { resultFull?: unknown }).resultFull,
+        resultTruncated: (partWithStatus as { resultTruncated?: boolean }).resultTruncated,
         status: partWithStatus.status?.type ?? "complete",
         isError: !!partWithStatus.isError,
         timestamp: partWithStatus.timestamp,
@@ -190,6 +178,30 @@ const AssistantMessage: FC = () => {
         while ((match = thinkingRegex.exec(text)) !== null) {
           traceItems.push({ type: "thinking", text: match[1].trim() });
         }
+      }
+    } else if (part.type === "data") {
+      const dataPart = part as { name?: string; data?: unknown };
+      if (dataPart.name === "agent-event" && dataPart.data && typeof dataPart.data === "object") {
+        const agentPart = dataPart.data as {
+          agentName?: string;
+          eventType?: string;
+          fromAgents?: string[];
+          toAgents?: string[];
+          handoffMessage?: string;
+          timestamp?: string;
+        };
+        if (agentPart.timestamp && (!earliestTimestamp || agentPart.timestamp < earliestTimestamp)) {
+          earliestTimestamp = agentPart.timestamp;
+        }
+        traceItems.push({
+          type: "agent-event",
+          agentName: agentPart.agentName,
+          eventType: (agentPart.eventType as "start" | "complete" | "handoff") ?? "start",
+          fromAgents: agentPart.fromAgents,
+          toAgents: agentPart.toAgents,
+          handoffMessage: agentPart.handoffMessage,
+          timestamp: agentPart.timestamp,
+        });
       }
     } else if ((part as { type: string }).type === "agent-event") {
       // Handle multi-agent orchestration events (graph/swarm mode)
@@ -397,6 +409,7 @@ const MessageMeta: FC<{ label: string }> = ({ label }) => {
         className={`${styles.messageStatus} ${
           statusLabel === "thinking" ? styles.messageStatusThinking : ""
         }`}
+        data-testid={`message-status-${label.toLowerCase()}`}
       >
         {statusLabel}
       </span>

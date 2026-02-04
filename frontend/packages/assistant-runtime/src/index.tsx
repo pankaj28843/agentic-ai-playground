@@ -1,5 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   AssistantRuntimeProvider as RuntimeProvider,
   unstable_useRemoteThreadListRuntime as useRemoteThreadListRuntime,
@@ -10,6 +11,8 @@ import {
 
 import { ApiClient } from "@agentic-ai-playground/api-client";
 import { createChatAdapter, threadListAdapter } from "./adapters";
+import type { RunOverrides } from "./types";
+export { getActiveSessionBranch, setActiveSessionBranch, subscribeSessionBranch } from "./session-branch";
 
 // Re-export converters for external use
 export { toApiMessage, toThreadMessage, buildRepository } from "./converters";
@@ -19,24 +22,33 @@ const baseUrl =
 
 const api = new ApiClient(baseUrl);
 
-const useLocalRuntimeAdapter = (runMode?: string) =>
-  useLocalRuntime(createChatAdapter(runMode));
-
-const useRuntimeHook = (runMode?: string) => {
-  return useLocalRuntimeAdapter(runMode);
-};
-
 export const AssistantRuntimeProvider = ({
   children,
   runMode,
+  runOverrides,
 }: {
   children: ReactNode;
   runMode?: string;
+  runOverrides?: RunOverrides;
 }) => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks -- runtimeHook is called by useRemoteThreadListRuntime as a hook factory
-  const runtimeHook = useCallback(() => useRuntimeHook(runMode), [runMode]);
+  const runModeRef = useRef(runMode);
+  const runOverridesRef = useRef(runOverrides);
+
+  useEffect(() => {
+    runModeRef.current = runMode;
+  }, [runMode]);
+
+  useEffect(() => {
+    runOverridesRef.current = runOverrides;
+  }, [runOverrides]);
+
   const runtime = useRemoteThreadListRuntime({
-    runtimeHook,
+    runtimeHook: () => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks -- hook factory invoked by useRemoteThreadListRuntime
+      return useLocalRuntime(
+        createChatAdapter(() => runModeRef.current, () => runOverridesRef.current),
+      );
+    },
     adapter: threadListAdapter,
   });
 
@@ -206,3 +218,5 @@ export const useThreadRouterSync = (
     threadNotFound,
   };
 };
+
+export type { RunOverrides };

@@ -3,35 +3,35 @@
 
 [providers.bedrock]
 type = "bedrock"
-region = "us-east-1"
+region = "eu-central-1"
 default = true
 
 [providers.bedrock.models.nova-pro]
-model_id = "us.amazon.nova-pro-v1:0"
+model_id = "eu.amazon.nova-pro-v1:0"
 temperature = 0.7
 
 [providers.bedrock.models.nova-lite]
-model_id = "us.amazon.nova-lite-v1:0"
+model_id = "eu.amazon.nova-lite-v1:0"
 temperature = 0.7
 
 [providers.bedrock.models.nova-micro]
-model_id = "us.amazon.nova-micro-v1:0"
+model_id = "eu.amazon.nova-micro-v1:0"
 temperature = 0.7
 
 [providers.bedrock.models.nova-premier]
-model_id = "amazon.nova-premier-v1:0"
+model_id = "eu.amazon.nova-premier-v1:0"
 temperature = 0.5
 
 [providers.bedrock.models.claude-sonnet]
-model_id = "anthropic.claude-sonnet-4-20250514-v1:0"
+model_id = "eu.anthropic.claude-sonnet-4-20250514-v1:0"
 temperature = 0.7
 
 [providers.bedrock.models.claude-haiku]
-model_id = "anthropic.claude-haiku-4-5-20251001-v1:0"
+model_id = "eu.anthropic.claude-haiku-4-5-20251001-v1:0"
 temperature = 0.7
 
 [providers.bedrock.models.claude-opus]
-model_id = "anthropic.claude-opus-4-5-20251101-v1:0"
+model_id = "eu.anthropic.claude-opus-4-5-20251101-v1:0"
 temperature = 0.5
 
 # EU region variants

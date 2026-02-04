@@ -1,4 +1,5 @@
 import { expect, test, APIRequestContext } from "@playwright/test";
+import { waitForAssistantDone } from "./helpers";
 
 const BASE_URL = process.env.E2E_BASE_URL;
 if (!BASE_URL) {
@@ -65,7 +66,7 @@ test.describe("Chat functionality", () => {
   test("mode selector shows all available modes", async ({ page }) => {
     await page.goto("/");
 
-    const modeCombobox = page.getByRole("combobox", { name: "Mode" });
+    const modeCombobox = page.getByRole("combobox", { name: "Run mode" });
     await expect(modeCombobox).toBeVisible();
 
     const data = await fetchProfiles(page.request);
@@ -85,7 +86,7 @@ test.describe("Chat functionality", () => {
     await page.goto("/");
 
     // Select a single-entrypoint run mode
-    const modeCombobox = page.getByRole("combobox", { name: "Mode" });
+    const modeCombobox = page.getByRole("combobox", { name: "Run mode" });
     const data = await fetchProfiles(request);
     const runMode = pickRunMode(data, "single");
     await modeCombobox.selectOption(runMode);
@@ -96,14 +97,12 @@ test.describe("Chat functionality", () => {
     await page.getByRole("button", { name: "Send" }).click();
 
     // Verify user message appears
-    await expect(page.getByText("Say exactly: PLAYWRIGHT_TEST_OK")).toBeVisible({
-      timeout: 5000,
-    });
+    await expect(
+      page.locator('[data-status="complete"]').filter({ hasText: "Say exactly: PLAYWRIGHT_TEST_OK" })
+    ).toBeVisible({ timeout: 5000 });
 
     // Wait for any assistant response (indicated by done state or text appearing)
-    await expect(page.locator("text=done").first()).toBeVisible({
-      timeout: 30000,
-    });
+    await waitForAssistantDone(page, 30000);
 
     // Cleanup: Get the newest thread (created by this test) and delete it
     const afterResponse = await request.get(`${BASE_URL}/api/threads`);
@@ -184,7 +183,7 @@ test.describe("Chat functionality", () => {
     await page.goto("/");
 
     // Ensure a run mode is selected
-    const modeCombobox = page.getByRole("combobox", { name: "Mode" });
+    const modeCombobox = page.getByRole("combobox", { name: "Run mode" });
     const data = await fetchProfiles(request);
     await modeCombobox.selectOption(pickRunMode(data));
 
@@ -198,9 +197,7 @@ test.describe("Chat functionality", () => {
     await expect(page.locator('[data-status="complete"]').filter({ hasText: "Search TechDocs" })).toBeVisible({ timeout: 5000 });
 
     // Wait for assistant response to complete
-    await expect(page.locator("text=done").first()).toBeVisible({
-      timeout: 60000,
-    });
+    await waitForAssistantDone(page, 60000);
 
     // Check if trace indicator appeared (indicates tool calls were made)
     // Model behavior is non-deterministic - tool calls may or may not be made
@@ -212,7 +209,9 @@ test.describe("Chat functionality", () => {
       await traceButton.click();
 
       // Trace panel should open and show tool call details
-      await expect(page.locator('.trace-panel')).toBeVisible({ timeout: 3000 });
+      await expect(
+        page.locator('[role="complementary"][aria-label="Agent trace"]')
+      ).toBeVisible({ timeout: 3000 });
 
       // Close the trace panel
       await page.keyboard.press('Escape');

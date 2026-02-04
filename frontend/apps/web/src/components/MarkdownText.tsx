@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable react-refresh/only-export-components */
 
 import {
   MarkdownTextPrimitive,
@@ -7,10 +8,12 @@ import {
   type CodeHeaderProps,
 } from "@assistant-ui/react-markdown";
 import remarkGfm from "remark-gfm";
-import { type FC, memo, useState } from "react";
+import { type FC, memo } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Check, Copy } from "lucide-react";
+import { useMachine } from "@xstate/react";
+import { setup } from "xstate";
 
 import styles from "./MarkdownText.module.css";
 
@@ -21,7 +24,7 @@ const cx = (...classes: Array<string | false | null | undefined>) => classes.fil
  * These are shown in the trace panel instead.
  * Also handles malformed/partial thinking tags from streaming artifacts.
  */
-const stripThinkingTags = (text: string): string => {
+export const stripThinkingTags = (text: string): string => {
   // First, strip complete thinking blocks
   let result = text.replace(/<thinking>[\s\S]*?<\/thinking>\s*/g, "");
   // Then strip any orphaned/malformed opening tags (including partial ones)
@@ -34,20 +37,57 @@ const stripThinkingTags = (text: string): string => {
 /**
  * Hook for copy-to-clipboard with visual feedback
  */
-const useCopyToClipboard = (copiedDuration = 2000) => {
-  const [isCopied, setIsCopied] = useState(false);
+type CopyContext = {
+  copiedDuration: number;
+};
+
+type CopyInput = {
+  copiedDuration: number;
+};
+
+type CopyEvent = { type: "COPY.SUCCESS" };
+
+const copyMachine = setup({
+  types: {
+    context: {} as CopyContext,
+    input: {} as CopyInput,
+    events: {} as CopyEvent,
+  },
+  delays: {
+    COPY_RESET: ({ context }) => context.copiedDuration,
+  },
+}).createMachine({
+  id: "copy",
+  context: ({ input }) => ({
+    copiedDuration: input.copiedDuration,
+  }),
+  initial: "idle",
+  states: {
+    idle: {
+      on: {
+        "COPY.SUCCESS": { target: "copied" },
+      },
+    },
+    copied: {
+      after: {
+        COPY_RESET: { target: "idle" },
+      },
+    },
+  },
+});
+
+export const useCopyToClipboard = (copiedDuration = 2000) => {
+  const [state, send] = useMachine(copyMachine, {
+    input: { copiedDuration },
+  });
+  const isCopied = state.matches("copied");
 
   const copyToClipboard = (value: string) => {
     if (!value) return;
 
-    const doCopy = () => {
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), copiedDuration);
-    };
-
     // Use clipboard API if available (secure context)
     if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(value).then(doCopy);
+      navigator.clipboard.writeText(value).then(() => send({ type: "COPY.SUCCESS" }));
     } else {
       // Fallback for non-secure contexts
       const textarea = document.createElement("textarea");
@@ -58,7 +98,7 @@ const useCopyToClipboard = (copiedDuration = 2000) => {
       textarea.select();
       try {
         document.execCommand("copy");
-        doCopy();
+        send({ type: "COPY.SUCCESS" });
       } finally {
         document.body.removeChild(textarea);
       }
@@ -190,3 +230,5 @@ const MarkdownTextImpl = () => {
 };
 
 export const MarkdownText = memo(MarkdownTextImpl);
+
+export const markdownComponents = defaultComponents;

@@ -1,4 +1,4 @@
-from agent_toolkit.config import load_profiles
+from agent_toolkit.config import expand_agent_tools, load_profiles
 
 
 def test_load_profiles_contains_defaults() -> None:
@@ -11,3 +11,8 @@ def test_load_profiles_contains_defaults() -> None:
     profile = profiles["general"]
     assert isinstance(profile.tool_groups, list)
     assert isinstance(profile.metadata, dict)
+
+
+def test_expand_agent_tools_respects_overrides() -> None:
+    tools = expand_agent_tools("general", ["strands_basic"])
+    assert "strands:calculator" in tools

@@ -156,6 +156,58 @@
     color: var(--muted);
   }
 
+  .slashMenu {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 6px 0 2px;
+    padding: 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  .slashMenuHeader {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+  }
+
+  .slashMenuItem {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: var(--bg);
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .slashMenuItem:hover {
+    border-color: var(--accent);
+    background: #f1f5f9;
+  }
+
+  .slashMenuName {
+    font-weight: 600;
+  }
+
+  .slashMenuDescription {
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+
+  .slashMenuHint {
+    font-size: 0.85rem;
+    color: var(--muted);
+    padding: 4px 2px;
+  }
+
   .composerActions {
     display: flex;
     justify-content: space-between;
@@ -205,6 +257,54 @@
   .composerCancel svg {
     width: 14px;
     height: 14px;
+  }
+
+  .composerQueueControls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .composerQueueRunning {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .composerQueueBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 999px;
+    border: none;
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    cursor: pointer;
+    background: var(--surface-2);
+    color: var(--ink);
+  }
+
+  .composerQueueBtn:hover {
+    background: var(--border);
+  }
+
+  .composerQueueBtn svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .composerQueueIndicator {
+    font-size: 0.75rem;
+    color: var(--muted);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .composerQueueWarning {
+    color: var(--accent);
   }
 
   /* Attachment dropzone */

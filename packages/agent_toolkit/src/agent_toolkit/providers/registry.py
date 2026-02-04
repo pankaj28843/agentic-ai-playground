@@ -164,7 +164,7 @@ class ModelProviderRegistry:
 
         if provider is None or provider.type == "bedrock":
             # Default to Bedrock
-            region = provider.region if provider and provider.region else "us-east-1"
+            region = provider.region if provider and provider.region else "eu-central-1"
             return BedrockModel(
                 model_id=model_id,
                 region_name=region,
@@ -202,11 +202,7 @@ class ModelProviderRegistry:
 
     def _create_anthropic_model(self, provider: ProviderConfig, model_config: ModelConfig) -> Model:
         """Create an Anthropic model instance."""
-        try:
-            from strands.models.anthropic import AnthropicModel  # noqa: PLC0415
-        except ImportError as e:
-            msg = "Anthropic provider requires 'anthropic' package: pip install anthropic"
-            raise ImportError(msg) from e
+        from strands.models.anthropic import AnthropicModel  # noqa: PLC0415
 
         api_key = os.getenv(provider.api_key_env or "ANTHROPIC_API_KEY")
         if not api_key:
@@ -222,11 +218,7 @@ class ModelProviderRegistry:
 
     def _create_openai_model(self, provider: ProviderConfig, model_config: ModelConfig) -> Model:
         """Create an OpenAI model instance."""
-        try:
-            from strands.models.openai import OpenAIModel  # noqa: PLC0415
-        except ImportError as e:
-            msg = "OpenAI provider requires 'openai' package: pip install openai"
-            raise ImportError(msg) from e
+        from strands.models.openai import OpenAIModel  # noqa: PLC0415
 
         api_key = os.getenv(provider.api_key_env or "OPENAI_API_KEY")
         if not api_key:
@@ -242,11 +234,7 @@ class ModelProviderRegistry:
 
     def _create_ollama_model(self, provider: ProviderConfig, model_config: ModelConfig) -> Model:
         """Create an Ollama model instance."""
-        try:
-            from strands.models.ollama import OllamaModel  # noqa: PLC0415
-        except ImportError as e:
-            msg = "Ollama provider requires 'ollama' package: pip install ollama"
-            raise ImportError(msg) from e
+        from strands.models.ollama import OllamaModel  # noqa: PLC0415
 
         host = provider.extra.get("host")
         if not host:

@@ -27,11 +27,7 @@ def create_strands_case(eval_case: EvalCase) -> Case:
     Returns:
         A strands_evals Case object
     """
-    try:
-        from strands_evals import Case  # noqa: PLC0415
-    except ImportError as e:
-        msg = "strands-agents-evals package required: pip install strands-agents-evals"
-        raise ImportError(msg) from e
+    from strands_evals import Case  # noqa: PLC0415
 
     return Case(
         name=eval_case.name,
@@ -51,12 +47,8 @@ def create_experiment_from_config(config: EvalConfig) -> Experiment:
     Returns:
         A strands_evals Experiment object
     """
-    try:
-        from strands_evals import Experiment  # noqa: PLC0415
-        from strands_evals.evaluators import OutputEvaluator  # noqa: PLC0415
-    except ImportError as e:
-        msg = "strands-agents-evals package required: pip install strands-agents-evals"
-        raise ImportError(msg) from e
+    from strands_evals import Experiment  # noqa: PLC0415
+    from strands_evals.evaluators import OutputEvaluator  # noqa: PLC0415
 
     cases = [create_strands_case(c) for c in config.cases]
 

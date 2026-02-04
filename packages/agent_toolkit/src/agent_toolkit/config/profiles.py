@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from agent_toolkit.config.schema import ConfigSchema
     from agent_toolkit.tools.registry import ToolRegistry
 
-__all__ = ["AgentProfile", "ProfileType", "load_profiles"]
+__all__ = ["AgentProfile", "ProfileType", "expand_agent_tools", "load_profiles"]
 
 
 def load_profiles(
@@ -42,10 +42,25 @@ def load_profiles(
     return profiles
 
 
+def expand_agent_tools(
+    agent_name: str,
+    tool_groups: list[str] | None = None,
+    tool_registry: ToolRegistry | None = None,  # kept for future expansion
+) -> list[str]:
+    """Expand agent tools including tool groups, with optional overrides."""
+    loader = NewConfigLoader()
+    schema, validation = loader.load()
+    if not validation.valid:
+        msg = f"Configuration validation failed: {validation.errors}"
+        raise ValueError(msg)
+    return _expand_agent_tools(agent_name, schema, tool_registry, tool_groups)
+
+
 def _expand_agent_tools(
     agent_name: str,
     schema: ConfigSchema,
     tool_registry: ToolRegistry | None = None,  # kept for future expansion
+    tool_groups_override: list[str] | None = None,
 ) -> list[str]:
     """Expand agent tools including tool groups."""
     _ = tool_registry
@@ -54,7 +69,8 @@ def _expand_agent_tools(
         return []
 
     all_tools = list(agent.tools)
-    for group_name in agent.tool_groups:
+    tool_groups = tool_groups_override if tool_groups_override is not None else agent.tool_groups
+    for group_name in tool_groups:
         group = schema.tool_groups.get(group_name)
         if group:
             all_tools.extend(group.tools)

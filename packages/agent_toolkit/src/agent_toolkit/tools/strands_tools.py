@@ -90,9 +90,6 @@ def import_strands_tool(tool_name: str) -> Callable[..., Any] | None:
         module_path, func_name = import_path.rsplit(":", 1)
         module = __import__(module_path, fromlist=[func_name])
         return getattr(module, func_name)
-    except ImportError as e:
-        logger.warning("Failed to import strands tool '%s': %s", tool_name, e)
-        return None
     except AttributeError as e:
         logger.warning("Tool '%s' not found in module: %s", tool_name, e)
         return None

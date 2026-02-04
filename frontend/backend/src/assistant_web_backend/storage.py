@@ -17,6 +17,8 @@ class ThreadRecord:
     status: str
     created_at: str
     updated_at: str
+    model_override: str | None = None
+    tool_groups_override: list[str] | None = None
 
 
 @dataclass(frozen=True)
@@ -36,6 +38,7 @@ class MessageRecord:
     entrypoint_reference: str | None = None
     model_id: str | None = None
     phoenix_session_id: str | None = None
+    session_entry_id: str | None = None
 
 
 class Storage:
@@ -50,9 +53,22 @@ class Storage:
     def list_threads(self) -> list[ThreadRecord]:
         """Return all threads ordered by most recent update."""
         rows = self._fetch_all(
-            "SELECT id, title, status, created_at, updated_at FROM threads ORDER BY updated_at DESC"
+            """SELECT id, title, status, created_at, updated_at, model_override,
+                      tool_groups_override
+               FROM threads ORDER BY updated_at DESC"""
         )
-        return [ThreadRecord(*row) for row in rows]
+        return [
+            ThreadRecord(
+                remote_id=row[0],
+                title=row[1],
+                status=row[2],
+                created_at=row[3],
+                updated_at=row[4],
+                model_override=row[5],
+                tool_groups_override=json.loads(row[6]) if row[6] else None,
+            )
+            for row in rows
+        ]
 
     def create_thread(self, remote_id: str) -> ThreadRecord:
         """Create a thread if it doesn't exist."""
@@ -61,20 +77,52 @@ class Storage:
         if existing:
             return existing
         self._execute(
-            "INSERT INTO threads (id, title, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
-            (remote_id, None, "regular", now, now),
+            """INSERT INTO threads
+               (id, title, status, created_at, updated_at, model_override, tool_groups_override)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (remote_id, None, "regular", now, now, None, None),
         )
-        return ThreadRecord(remote_id, None, "regular", now, now)
+        return ThreadRecord(remote_id, None, "regular", now, now, None, None)
 
     def fetch_thread(self, remote_id: str) -> ThreadRecord | None:
         """Fetch a thread by ID."""
         rows = self._fetch_all(
-            "SELECT id, title, status, created_at, updated_at FROM threads WHERE id = ?",
+            """SELECT id, title, status, created_at, updated_at, model_override,
+                      tool_groups_override
+               FROM threads WHERE id = ?""",
             (remote_id,),
         )
         if not rows:
             return None
-        return ThreadRecord(*rows[0])
+        row = rows[0]
+        return ThreadRecord(
+            remote_id=row[0],
+            title=row[1],
+            status=row[2],
+            created_at=row[3],
+            updated_at=row[4],
+            model_override=row[5],
+            tool_groups_override=json.loads(row[6]) if row[6] else None,
+        )
+
+    def update_thread_overrides(
+        self,
+        remote_id: str,
+        model_override: str | None,
+        tool_groups_override: list[str] | None,
+    ) -> None:
+        """Persist override metadata for a thread."""
+        tool_groups_value = (
+            json.dumps(tool_groups_override, ensure_ascii=True)
+            if tool_groups_override is not None
+            else None
+        )
+        self._execute(
+            """UPDATE threads
+               SET model_override = ?, tool_groups_override = ?, updated_at = ?
+               WHERE id = ?""",
+            (model_override, tool_groups_value, _timestamp(), remote_id),
+        )
 
     def rename_thread(self, remote_id: str, title: str) -> None:
         """Rename a thread by ID."""
@@ -101,7 +149,7 @@ class Storage:
         rows = self._fetch_all(
             """SELECT id, thread_id, role, content, created_at, phoenix_trace_id,
                       run_profile, run_mode, execution_mode, entrypoint_reference,
-                      model_id, phoenix_session_id
+                      model_id, phoenix_session_id, session_entry_id
                FROM messages WHERE thread_id = ? ORDER BY created_at ASC""",
             (remote_id,),
         )
@@ -119,6 +167,7 @@ class Storage:
                 entrypoint_reference=row[9],
                 model_id=row[10],
                 phoenix_session_id=row[11],
+                session_entry_id=row[12],
             )
             for row in rows
         ]
@@ -129,8 +178,8 @@ class Storage:
             """INSERT OR REPLACE INTO messages
                (id, thread_id, role, content, created_at, phoenix_trace_id,
                 run_profile, run_mode, execution_mode, entrypoint_reference,
-                model_id, phoenix_session_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                model_id, phoenix_session_id, session_entry_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 record.message_id,
                 record.thread_id,
@@ -144,6 +193,7 @@ class Storage:
                 record.entrypoint_reference,
                 record.model_id,
                 record.phoenix_session_id,
+                record.session_entry_id,
             ),
         )
         self._execute(
@@ -166,7 +216,9 @@ class Storage:
                     title TEXT,
                     status TEXT NOT NULL,
                     created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL
+                    updated_at TEXT NOT NULL,
+                    model_override TEXT,
+                    tool_groups_override TEXT
                 )
                 """
             )
@@ -185,10 +237,14 @@ class Storage:
                     entrypoint_reference TEXT,
                     model_id TEXT,
                     phoenix_session_id TEXT,
+                    session_entry_id TEXT,
                     FOREIGN KEY (thread_id) REFERENCES threads(id) ON DELETE CASCADE
                 )
                 """
             )
+            _ensure_column(conn, "threads", "model_override", "TEXT")
+            _ensure_column(conn, "threads", "tool_groups_override", "TEXT")
+            _ensure_column(conn, "messages", "session_entry_id", "TEXT")
 
     def _fetch_all(self, query: str, params: tuple[Any, ...] = ()) -> list[tuple[Any, ...]]:
         with sqlite3.connect(self._db_path) as conn:
@@ -203,3 +259,11 @@ class Storage:
 
 def _timestamp() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _ensure_column(conn: sqlite3.Connection, table: str, column: str, column_type: str) -> None:
+    cursor = conn.execute(f"PRAGMA table_info({table})")
+    existing = {row[1] for row in cursor.fetchall()}
+    if column in existing:
+        return
+    conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {column_type}")

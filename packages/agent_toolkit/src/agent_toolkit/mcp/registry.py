@@ -18,16 +18,8 @@ from __future__ import annotations
 import json
 import logging
 import os
+import tomllib
 from pathlib import Path  # noqa: TC003 (needed at runtime)
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import tomllib
-else:
-    try:
-        import tomllib
-    except ImportError:
-        import tomli as tomllib  # type: ignore[import-not-found,no-redef]
 
 from mcp.client.streamable_http import streamable_http_client
 from strands.tools.mcp import MCPClient

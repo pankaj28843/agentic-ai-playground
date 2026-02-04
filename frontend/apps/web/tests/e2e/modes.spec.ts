@@ -1,4 +1,5 @@
 import { expect, test, APIRequestContext } from "@playwright/test";
+import { waitForAssistantDone } from "./helpers";
 
 const BASE_URL = process.env.E2E_BASE_URL;
 if (!BASE_URL) {
@@ -51,7 +52,7 @@ test.describe("Run modes", () => {
     // Select a single-entrypoint mode
     const data = await fetchProfiles(request);
     const runMode = pickRunMode(data, "single");
-    await page.getByRole("combobox", { name: "Mode" }).selectOption(runMode);
+    await page.getByRole("combobox", { name: "Run mode" }).selectOption(runMode);
 
     // Send message
     const input = page.getByPlaceholder("Send a message...");
@@ -64,7 +65,7 @@ test.describe("Run modes", () => {
     ).toBeVisible({ timeout: 5000 });
 
     // Wait for response completion indicator
-    await expect(page.locator("text=done").first()).toBeVisible({ timeout: 30000 });
+    await waitForAssistantDone(page, 30000);
 
     // Cleanup: Get the newest thread and delete it
     const afterResponse = await request.get(`${BASE_URL}/api/threads`);
@@ -77,7 +78,7 @@ test.describe("Run modes", () => {
   });
 
   test("mode selection persists across interactions", async ({ page, request }) => {
-    const modeCombobox = page.getByRole("combobox", { name: "Mode" });
+    const modeCombobox = page.getByRole("combobox", { name: "Run mode" });
     const data = await fetchProfiles(request);
     const modes = data.runModes;
     if (modes.length < 2) {
@@ -128,7 +129,7 @@ test.describe("Thread management", () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Wait for done indicator (response complete)
-    await expect(page.locator("text=done").first()).toBeVisible({ timeout: 30000 });
+    await waitForAssistantDone(page, 30000);
 
     // The thread should now be in the sidebar - click it to ensure URL navigation
     const threadButton = page.getByRole("button", { name: /URL navigation test/i });
@@ -177,7 +178,7 @@ test.describe("Thread management", () => {
     await expect(page.getByText("Creating thread for test")).toBeVisible({ timeout: 5000 });
 
     // Wait for done indicator
-    await expect(page.locator("text=done").first()).toBeVisible({ timeout: 30000 });
+    await waitForAssistantDone(page, 30000);
 
     // Click new thread
     await page.getByRole("button", { name: "New thread" }).click();

@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from phoenix.evals.evaluators import ClassificationEvaluator
+    from phoenix.evals import ClassificationEvaluator
     from phoenix.evals.llm import LLM
 
 logger = logging.getLogger(__name__)
@@ -70,18 +70,15 @@ def _create_llm(config: EvalConfig) -> LLM | None:
         LLM wrapper or None if creation fails.
     """
     try:
-        from phoenix.evals.llm import LLM  # noqa: PLC0415
-
         # Use LiteLLM provider for Bedrock access
         # Model format: bedrock/{model_id}
+        from phoenix.evals.llm import LLM  # noqa: PLC0415
+
         return LLM(
             provider="litellm",
             model=config.model,
             client="litellm",
         )
-    except ImportError:
-        logger.warning("phoenix.evals not available - install arize-phoenix-evals")
-        return None
     except Exception:
         logger.exception("Failed to create LLM for evaluation")
         return None
@@ -95,8 +92,6 @@ def _create_response_quality_evaluator(
     Evaluates whether the agent response is helpful, accurate, and well-formatted.
     """
     try:
-        from phoenix.evals import ClassificationEvaluator  # noqa: PLC0415
-
         template = """You are evaluating an AI assistant's response quality.
 
 User Query: {input}
@@ -114,6 +109,8 @@ Classify the response as one of:
 - "poor": Fails to meet important criteria
 
 Respond with just the classification label."""
+
+        from phoenix.evals import ClassificationEvaluator  # noqa: PLC0415
 
         return ClassificationEvaluator(
             name="response_quality",
