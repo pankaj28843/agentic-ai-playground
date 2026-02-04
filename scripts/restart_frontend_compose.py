@@ -961,7 +961,7 @@ def _free_ports(
             if dry_run:
                 sys.stderr.write(f"[dry-run] Would terminate pid {pid} ({command})\n")
                 continue
-            _terminate_process(pid, command, verbose=verbose)
+            _terminate_pid_process(pid, command, verbose=verbose)
 
     if not dry_run:
         remaining = _ports_to_pids(ports)
@@ -1016,7 +1016,7 @@ def _pid_command(pid: int) -> str:
     return result.stdout.strip()
 
 
-def _terminate_process(pid: int, command: str, *, verbose: bool = False) -> None:
+def _terminate_pid_process(pid: int, command: str, *, verbose: bool = False) -> None:
     if verbose:
         sys.stderr.write(f"Stopping pid {pid} ({command})\n")
     kill_path = _tool_path("kill")
