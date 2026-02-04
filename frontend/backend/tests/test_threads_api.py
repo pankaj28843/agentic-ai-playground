@@ -67,8 +67,8 @@ def test_profiles_returns_available_profiles(client, monkeypatch) -> None:
     mock_runtime = MagicMock()
     mock_runtime.list_public_profiles.return_value = [mock_profile]
 
-    # Mock RuntimeService.get_runtime to return mock
-    monkeypatch.setattr(runtime_module.RuntimeService, "get_runtime", lambda: mock_runtime)
+    # Mock get_runtime to return mock
+    monkeypatch.setattr(runtime_module, "get_runtime", lambda: mock_runtime)
 
     response = client.get("/api/profiles")
     assert response.status_code == 200
@@ -87,11 +87,11 @@ def test_profiles_returns_500_when_runtime_unavailable(client, monkeypatch) -> N
     """Test /api/profiles returns 500 when AgentRuntime is not available."""
     from assistant_web_backend.services import runtime as runtime_module
 
-    # Mock RuntimeService.get_runtime to raise RuntimeError
+    # Mock get_runtime to raise RuntimeError
     def raise_error():
         raise RuntimeError("AgentRuntime not available")
 
-    monkeypatch.setattr(runtime_module.RuntimeService, "get_runtime", raise_error)
+    monkeypatch.setattr(runtime_module, "get_runtime", raise_error)
 
     response = client.get("/api/profiles")
     assert response.status_code == 500
@@ -102,7 +102,7 @@ def test_chat_run_streams_response(client, monkeypatch) -> None:
     """Test /api/chat/run streams a response from the agent."""
     from unittest.mock import MagicMock
 
-    from assistant_web_backend.routes import chat as chat_module
+    from assistant_web_backend.services import chat_runner as chat_module
     from assistant_web_backend.services import runtime as runtime_module
 
     # Create mock profile
@@ -121,14 +121,14 @@ def test_chat_run_streams_response(client, monkeypatch) -> None:
     mock_runtime.stream = mock_stream
     mock_runtime.build_invocation_state = MagicMock(return_value={})
 
-    # Mock RuntimeService.get_runtime
-    monkeypatch.setattr(runtime_module.RuntimeService, "get_runtime", lambda: mock_runtime)
+    # Mock get_runtime
+    monkeypatch.setattr(runtime_module, "get_runtime", lambda: mock_runtime)
 
     # Mock settings
     mock_settings = MagicMock()
     mock_settings.run_mode = "single"
     mock_settings.bedrock_model_id = "bedrock.nova-lite"
-    monkeypatch.setattr(chat_module, "load_settings", MagicMock(return_value=mock_settings))
+    monkeypatch.setattr(chat_module, "get_settings", MagicMock(return_value=mock_settings))
 
     response = client.post(
         "/api/chat/run",
@@ -157,7 +157,7 @@ def test_chat_run_streams_rich_content_with_tool_calls(client, monkeypatch) -> N
     import json
     from unittest.mock import MagicMock
 
-    from assistant_web_backend.routes import chat as chat_module
+    from assistant_web_backend.services import chat_runner as chat_module
     from assistant_web_backend.services import runtime as runtime_module
 
     # Create mock profile
@@ -188,14 +188,14 @@ def test_chat_run_streams_rich_content_with_tool_calls(client, monkeypatch) -> N
     mock_runtime.stream = mock_stream
     mock_runtime.build_invocation_state = MagicMock(return_value={})
 
-    # Mock RuntimeService.get_runtime
-    monkeypatch.setattr(runtime_module.RuntimeService, "get_runtime", lambda: mock_runtime)
+    # Mock get_runtime
+    monkeypatch.setattr(runtime_module, "get_runtime", lambda: mock_runtime)
 
     # Mock settings
     mock_settings = MagicMock()
     mock_settings.run_mode = "single"
     mock_settings.bedrock_model_id = "bedrock.nova-lite"
-    monkeypatch.setattr(chat_module, "load_settings", MagicMock(return_value=mock_settings))
+    monkeypatch.setattr(chat_module, "get_settings", MagicMock(return_value=mock_settings))
 
     response = client.post(
         "/api/chat/run",
@@ -233,7 +233,7 @@ def test_chat_run_persists_thread_overrides(client, monkeypatch) -> None:
     """Test that overrides from /api/chat/run are persisted to thread metadata."""
     from unittest.mock import MagicMock
 
-    from assistant_web_backend.routes import chat as chat_module
+    from assistant_web_backend.services import chat_runner as chat_module
     from assistant_web_backend.services import runtime as runtime_module
 
     mock_profile = MagicMock()
@@ -248,12 +248,12 @@ def test_chat_run_persists_thread_overrides(client, monkeypatch) -> None:
     mock_runtime.stream = mock_stream
     mock_runtime.build_invocation_state = MagicMock(return_value={})
 
-    monkeypatch.setattr(runtime_module.RuntimeService, "get_runtime", lambda: mock_runtime)
+    monkeypatch.setattr(runtime_module, "get_runtime", lambda: mock_runtime)
 
     mock_settings = MagicMock()
     mock_settings.run_mode = "single"
     mock_settings.bedrock_model_id = "bedrock.nova-lite"
-    monkeypatch.setattr(chat_module, "load_settings", MagicMock(return_value=mock_settings))
+    monkeypatch.setattr(chat_module, "get_settings", MagicMock(return_value=mock_settings))
 
     response = client.post(
         "/api/chat/run",
@@ -283,7 +283,7 @@ def test_chat_run_inference_profile_error_is_friendly(client, monkeypatch) -> No
     """Test inference profile errors are mapped to a friendly message."""
     from unittest.mock import MagicMock
 
-    from assistant_web_backend.routes import chat as chat_module
+    from assistant_web_backend.services import chat_runner as chat_module
     from assistant_web_backend.services import runtime as runtime_module
 
     mock_profile = MagicMock()
@@ -301,12 +301,12 @@ def test_chat_run_inference_profile_error_is_friendly(client, monkeypatch) -> No
     mock_runtime.stream = mock_stream
     mock_runtime.build_invocation_state = MagicMock(return_value={})
 
-    monkeypatch.setattr(runtime_module.RuntimeService, "get_runtime", lambda: mock_runtime)
+    monkeypatch.setattr(runtime_module, "get_runtime", lambda: mock_runtime)
 
     mock_settings = MagicMock()
     mock_settings.run_mode = "single"
     mock_settings.bedrock_model_id = "bedrock.nova-lite"
-    monkeypatch.setattr(chat_module, "load_settings", MagicMock(return_value=mock_settings))
+    monkeypatch.setattr(chat_module, "get_settings", MagicMock(return_value=mock_settings))
 
     response = client.post(
         "/api/chat/run",
@@ -331,11 +331,11 @@ def test_chat_run_requires_runtime(client, monkeypatch) -> None:
     import pytest
     from assistant_web_backend.services import runtime as runtime_module
 
-    # Mock RuntimeService.get_runtime to raise RuntimeError
+    # Mock get_runtime to raise RuntimeError
     def raise_error():
         raise RuntimeError("AgentRuntime not available")
 
-    monkeypatch.setattr(runtime_module.RuntimeService, "get_runtime", raise_error)
+    monkeypatch.setattr(runtime_module, "get_runtime", raise_error)
 
     # The error should propagate through the streaming response
     with pytest.raises(RuntimeError, match="AgentRuntime not available"):

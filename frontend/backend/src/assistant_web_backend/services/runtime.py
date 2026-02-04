@@ -1,57 +1,36 @@
-"""Agent runtime service.
+"""Agent runtime provider.
 
-Manages the singleton AgentRuntime instance and provides runtime operations.
+Creates and caches the AgentRuntime instance with a DI-friendly interface.
 """
 
 from __future__ import annotations
 
 import logging
-import threading
+from functools import lru_cache
 from typing import Any
 
-from agent_toolkit.runtime import AgentRuntime as _AgentRuntime
-
 logger = logging.getLogger(__name__)
-
-# Lazy import to avoid circular dependencies
-AgentRuntime: Any = _AgentRuntime
 
 
 def _load_runtime_class() -> Any:
     """Lazy load AgentRuntime to avoid import cycles."""
-    global AgentRuntime  # noqa: PLW0603
-    if AgentRuntime is None:
-        from agent_toolkit.runtime import AgentRuntime as _AgentRuntime  # noqa: PLC0415
+    from agent_toolkit.runtime import AgentRuntime as _AgentRuntime  # noqa: PLC0415
 
-        AgentRuntime = _AgentRuntime
-    return AgentRuntime
+    return _AgentRuntime
 
 
-# Singleton AgentRuntime - initialized once at module load.
-# This ensures Phoenix telemetry is set up BEFORE any boto3/Bedrock clients are created.
-_runtime: Any = None
-_runtime_lock = threading.Lock()
+@lru_cache
+def get_runtime() -> Any:
+    """Return a cached AgentRuntime instance."""
+    runtime_class = _load_runtime_class()
+    if runtime_class is None:
+        message = "Agent runtime is unavailable"
+        raise RuntimeError(message)
+    runtime = runtime_class()
+    logger.info("AgentRuntime initialized (Phoenix telemetry should be active)")
+    return runtime
 
 
-class RuntimeService:
-    """Service for managing the agent runtime singleton."""
-
-    @staticmethod
-    def get_runtime() -> Any:
-        """Get or create the singleton AgentRuntime instance (thread-safe)."""
-        global _runtime  # noqa: PLW0603
-        if _runtime is None:
-            with _runtime_lock:
-                if _runtime is None:  # Double-checked locking
-                    runtime_class = _load_runtime_class()
-                    if runtime_class is None:
-                        message = "Agent runtime is unavailable"
-                        raise RuntimeError(message)
-                    _runtime = runtime_class()
-                    logger.info("AgentRuntime initialized (Phoenix telemetry should be active)")
-        return _runtime
-
-    @staticmethod
-    def is_available() -> bool:
-        """Check if the runtime is available."""
-        return _load_runtime_class() is not None
+def is_available() -> bool:
+    """Check if the runtime is available."""
+    return _load_runtime_class() is not None

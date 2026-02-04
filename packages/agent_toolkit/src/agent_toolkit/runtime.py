@@ -42,12 +42,7 @@ class AgentRuntime:
         self._factory = AgentFactory(settings=self._settings, registry=DEFAULT_TOOL_REGISTRY)
         self._swarm_presets = load_swarm_presets()
         self._swarm_preset = self._swarm_presets.get(self._settings.swarm_preset)
-        self._pipeline = ExecutionPipeline(
-            config_service=self._config_service,
-            factory=self._factory,
-            tooling=self._tooling,
-            swarm_preset=self._swarm_preset,
-        )
+        self._pipeline = self._build_pipeline()
 
         self._telemetry_provider = setup_telemetry(self._settings)
         if self._telemetry_provider is not None:
@@ -79,7 +74,11 @@ class AgentRuntime:
     def set_swarm_preset(self, preset_name: str) -> None:
         """Select a swarm preset by name."""
         self._swarm_preset = self._swarm_presets.get(preset_name)
-        self._pipeline = ExecutionPipeline(
+        self._pipeline = self._build_pipeline()
+
+    def _build_pipeline(self) -> ExecutionPipeline:
+        """Construct the execution pipeline with current settings."""
+        return ExecutionPipeline(
             config_service=self._config_service,
             factory=self._factory,
             tooling=self._tooling,

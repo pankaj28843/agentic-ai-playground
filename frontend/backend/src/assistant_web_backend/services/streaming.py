@@ -96,36 +96,30 @@ class StreamState:
             "multiagent_node_stream",
         ):
             changed = self._handle_multiagent_event(event_data) or changed
-            # For node_stream, also process the inner event
             if event_type == "multiagent_node_stream":
                 inner_event = event_data.get("event", {})
                 if isinstance(inner_event, dict):
-                    changed = self._handle_inner_event(inner_event) or changed
+                    changed = self._handle_event_common(inner_event) or changed
             return changed
 
-        changed = self._handle_nested_event(event_data) or changed
-        changed = self._handle_delta_tool_use(event_data) or changed
-        changed = self._handle_text_data(event_data) or changed
-        changed = self._handle_tool_stream_event(event_data) or changed
+        return self._handle_event_common(event_data)
 
-        tool_use = event_data.get("current_tool_use")
-        if isinstance(tool_use, dict):
-            changed = self._handle_tool_start(tool_use) or changed
+    def normalize_event(self, event: Any) -> dict[str, Any] | None:
+        """Normalize event from single-agent or multi-agent format."""
+        if not isinstance(event, dict):
+            return None
+        event_type = event.get("type")
+        if event_type in (
+            "multiagent_node_start",
+            "multiagent_node_stop",
+            "multiagent_handoff",
+            "multiagent_node_stream",
+        ):
+            return event
+        return event
 
-        tool_result = event_data.get("tool_result")
-        if tool_result is None and event_data.get("type") == "tool_result":
-            tool_result = event_data
-        if tool_result is None:
-            tool_result = event_data.get("tool_output")
-        if tool_result is not None:
-            changed = self._handle_tool_result(event_data, tool_result) or changed
-
-        changed = self._handle_message_tool_results(event_data.get("message")) or changed
-
-        return self._handle_reasoning_event(event_data) or changed
-
-    def _handle_inner_event(self, event_data: dict[str, Any]) -> bool:
-        """Process inner event from multiagent_node_stream."""
+    def _handle_event_common(self, event_data: dict[str, Any]) -> bool:
+        """Process shared event handling logic."""
         changed = False
         changed = self._handle_nested_event(event_data) or changed
         changed = self._handle_delta_tool_use(event_data) or changed
