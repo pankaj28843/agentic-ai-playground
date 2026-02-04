@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from agent_toolkit.config.service import ConfigService, get_config_service
+from agent_toolkit.config.tool_expansion import expand_tools_and_capabilities
 
 if TYPE_CHECKING:
     from agent_toolkit.tools.registry import ToolRegistry
@@ -37,24 +38,13 @@ class ToolCatalog:
     ) -> ToolSelection:
         """Expand tool groups and return tools plus capabilities."""
         schema = self._config_service.get_schema()
-        agent = schema.agents.get(agent_name)
-        if not agent:
-            return ToolSelection(tools=[], capabilities=())
-
-        tools = list(agent.tools)
-        tool_groups = (
-            tool_groups_override if tool_groups_override is not None else agent.tool_groups
+        tools, capabilities = expand_tools_and_capabilities(
+            schema,
+            agent_name,
+            tool_groups_override,
         )
-        capabilities: list[str] = []
-
-        for group_name in tool_groups:
-            group = schema.tool_groups.get(group_name)
-            if group:
-                tools.extend(group.tools)
-                capabilities.extend(group.capabilities)
-
-        unique_tools = _dedupe(tools)
-        unique_capabilities = tuple(_dedupe(capabilities))
+        unique_tools = tools
+        unique_capabilities = tuple(capabilities)
         return ToolSelection(tools=unique_tools, capabilities=unique_capabilities)
 
     def resolve_strands_tools(self, tool_names: list[str]) -> list[Any]:
@@ -64,14 +54,3 @@ class ToolCatalog:
     def registry(self) -> ToolRegistry:
         """Return the underlying tool registry."""
         return self._registry
-
-
-def _dedupe(values: list[str]) -> list[str]:
-    seen: set[str] = set()
-    unique: list[str] = []
-    for value in values:
-        if value in seen:
-            continue
-        seen.add(value)
-        unique.append(value)
-    return unique

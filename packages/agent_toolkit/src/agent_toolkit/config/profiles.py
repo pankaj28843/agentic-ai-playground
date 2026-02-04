@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from agent_toolkit.config.service import get_config_service
+from agent_toolkit.config.tool_expansion import expand_tools_and_capabilities
 from agent_toolkit.models.profiles import AgentProfile, ProfileType
 
 if TYPE_CHECKING:
@@ -16,26 +17,9 @@ def load_profiles(
     registry: ToolRegistry | None = None,
 ) -> dict[str, AgentProfile]:
     """Load atomic agent profiles from the new schema."""
+    _ = registry
     service = get_config_service()
-    schema = service.get_schema()
-    profiles: dict[str, AgentProfile] = {}
-    for agent_name, agent in schema.agents.items():
-        tools = _expand_agent_tools(agent_name, schema, registry)
-        description = str(agent.metadata.get("description", f"Atomic agent: {agent_name}"))
-        profiles[agent_name] = AgentProfile(
-            name=agent_name,
-            description=description,
-            model=agent.model,
-            system_prompt=agent.system_prompt,
-            tools=tools,
-            tool_groups=list(agent.tool_groups),
-            extends="",
-            metadata=agent.metadata,
-            constraints={},
-            profile_type=ProfileType.INTERNAL,
-            model_config=agent.model_config_overrides,
-        )
-    return profiles
+    return service.build_profiles()
 
 
 def expand_agent_tools(
@@ -57,21 +41,5 @@ def _expand_agent_tools(
 ) -> list[str]:
     """Expand agent tools including tool groups."""
     _ = tool_registry
-    agent = schema.agents.get(agent_name)
-    if not agent:
-        return []
-
-    all_tools = list(agent.tools)
-    tool_groups = tool_groups_override if tool_groups_override is not None else agent.tool_groups
-    for group_name in tool_groups:
-        group = schema.tool_groups.get(group_name)
-        if group:
-            all_tools.extend(group.tools)
-
-    seen: set[str] = set()
-    unique_tools: list[str] = []
-    for tool in all_tools:
-        if tool not in seen:
-            unique_tools.append(tool)
-            seen.add(tool)
-    return unique_tools
+    tools, _ = expand_tools_and_capabilities(schema, agent_name, tool_groups_override)
+    return tools

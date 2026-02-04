@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from agent_toolkit.config.new_loader import NewConfigLoader
 from agent_toolkit.config.settings import load_settings
+from agent_toolkit.config.tool_expansion import expand_tools_and_capabilities
 from agent_toolkit.models.profiles import AgentProfile, ProfileType
 
 if TYPE_CHECKING:
@@ -34,6 +35,8 @@ class ConfigService:
         self._loader = NewConfigLoader()
         self._snapshot: ConfigSnapshot | None = None
         self._config_dir: str | None = None
+        self._profiles: dict[str, AgentProfile] | None = None
+        self._profiles_dir: str | None = None
 
     def load_snapshot(self, *, force: bool = False) -> ConfigSnapshot:
         """Load a configuration snapshot, optionally forcing reload."""
@@ -44,6 +47,8 @@ class ConfigService:
         schema, validation = self._loader.load()
         self._snapshot = ConfigSnapshot(settings=settings, schema=schema, validation=validation)
         self._config_dir = current_dir
+        self._profiles = None
+        self._profiles_dir = None
         return self._snapshot
 
     def get_schema(self) -> ConfigSchema:
@@ -60,6 +65,11 @@ class ConfigService:
 
     def build_profiles(self) -> dict[str, AgentProfile]:
         """Build agent profiles from the schema."""
+        snapshot = self.load_snapshot()
+        current_dir = snapshot.settings.playground_config_dir
+        if self._profiles is not None and current_dir == self._profiles_dir:
+            return self._profiles
+
         schema = self.get_schema()
         profiles: dict[str, AgentProfile] = {}
         for agent_name, agent in schema.agents.items():
@@ -78,6 +88,8 @@ class ConfigService:
                 profile_type=ProfileType.INTERNAL,
                 model_config=agent.model_config_overrides,
             )
+        self._profiles = profiles
+        self._profiles_dir = current_dir
         return profiles
 
     def expand_agent_tools(
@@ -87,26 +99,8 @@ class ConfigService:
     ) -> list[str]:
         """Expand agent tools and tool groups into a unique list."""
         schema = self.get_schema()
-        agent = schema.agents.get(agent_name)
-        if not agent:
-            return []
-
-        all_tools = list(agent.tools)
-        tool_groups = (
-            tool_groups_override if tool_groups_override is not None else agent.tool_groups
-        )
-        for group_name in tool_groups:
-            group = schema.tool_groups.get(group_name)
-            if group:
-                all_tools.extend(group.tools)
-
-        seen: set[str] = set()
-        unique_tools: list[str] = []
-        for tool in all_tools:
-            if tool not in seen:
-                unique_tools.append(tool)
-                seen.add(tool)
-        return unique_tools
+        tools, _ = expand_tools_and_capabilities(schema, agent_name, tool_groups_override)
+        return tools
 
     def resolve_execution_mode(self, profile_name: str) -> tuple[str, str, dict[str, Any]]:
         """Resolve execution mode from a public profile name."""
