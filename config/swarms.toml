@@ -2,6 +2,27 @@
 # Each swarm defines agents (referencing atomic agents), entry points, limits, and timeouts
 # Agents inherit model config from their profiles, but can override here
 
+[swarms.quick_swarm]
+description = "Single-agent swarm for quick responses"
+entry_point = "assistant"
+agents = [
+  { name = "assistant", agent = "general" },
+]
+max_handoffs = 10
+max_iterations = 15
+timeouts = { execution = 300, node = 180 }
+
+[swarms.research_swarm]
+description = "Research swarm with parallel researcher and context optimizer"
+entry_point = "researcher"
+agents = [
+  { name = "researcher", agent = "parallel_researcher" },
+  { name = "optimizer", agent = "context_optimized" },
+]
+max_handoffs = 30
+max_iterations = 50
+timeouts = { execution = 900, node = 300 }
+
 [swarms.expert_swarm]
 description = "Expert swarm with planner, researcher, fact-checker, and synthesizer"
 entry_point = "planner"
@@ -14,3 +35,21 @@ agents = [
 max_handoffs = 80
 max_iterations = 150
 timeouts = { execution = 1800, node = 600 }
+
+# Advanced swarm with mixed model capabilities
+[swarms.mixed_capability_swarm]
+description = "Swarm using different model tiers for cost optimization"
+entry_point = "triage"
+agents = [
+  # Fast triage using lite model
+  { name = "triage", agent = "general", model_override = "bedrock.nova-lite" },
+  # Deep analysis using pro model
+  { name = "analyst", agent = "deep_researcher" },
+  # Quick fact-checking with micro
+  { name = "verifier", agent = "fact_checker", model_override = "bedrock.nova-micro" },
+  # Final synthesis with pro
+  { name = "writer", agent = "synthesizer" },
+]
+max_handoffs = 50
+max_iterations = 100
+timeouts = { execution = 1200, node = 400 }
