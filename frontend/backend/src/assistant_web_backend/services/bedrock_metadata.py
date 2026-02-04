@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from time import monotonic
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
@@ -28,11 +29,25 @@ class BedrockOverrides:
     warnings: list[str] = field(default_factory=list)
 
 
+CACHE_TTL_SECONDS = 300
+_BEDROCK_CACHE: tuple[float, BedrockOverrides] | None = None
+
+
+def clear_bedrock_overrides_cache() -> None:
+    """Clear cached Bedrock overrides (for tests or forced refresh)."""
+    global _BEDROCK_CACHE  # noqa: PLW0603
+    _BEDROCK_CACHE = None
+
+
 def fetch_bedrock_overrides() -> BedrockOverrides:
     """Fetch Bedrock models and inference profiles using boto3.
 
     Returns empty lists if boto3 or Bedrock is unavailable.
     """
+    cached = _get_cached_overrides()
+    if cached is not None:
+        return cached
+
     warnings: list[str] = []
     client = boto3.client("bedrock")
 
@@ -85,8 +100,24 @@ def fetch_bedrock_overrides() -> BedrockOverrides:
         ),
     )
 
-    return BedrockOverrides(
+    overrides = BedrockOverrides(
         models=models,
         inference_profiles=inference_profiles,
         warnings=warnings,
     )
+    _set_cached_overrides(overrides)
+    return overrides
+
+
+def _get_cached_overrides() -> BedrockOverrides | None:
+    if _BEDROCK_CACHE is None:
+        return None
+    cached_at, overrides = _BEDROCK_CACHE
+    if monotonic() - cached_at > CACHE_TTL_SECONDS:
+        return None
+    return overrides
+
+
+def _set_cached_overrides(overrides: BedrockOverrides) -> None:
+    global _BEDROCK_CACHE  # noqa: PLW0603
+    _BEDROCK_CACHE = (monotonic(), overrides)

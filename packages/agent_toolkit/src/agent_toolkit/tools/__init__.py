@@ -11,6 +11,7 @@ reference tools by name rather than importing callables directly.
 """
 
 from agent_toolkit.mcp.providers import shutdown_mcp_clients
+from agent_toolkit.tools.catalog import ToolCatalog, ToolSelection
 from agent_toolkit.tools.prompts import MCPPromptClient, PromptDefinition
 from agent_toolkit.tools.registry import (
     DEFAULT_TOOL_REGISTRY,
@@ -40,9 +41,11 @@ __all__ = [
     "MCPResourceClient",
     "PromptDefinition",
     "RegisteredTool",
+    "ToolCatalog",
     "ToolDefinition",
     "ToolDetailLevel",
     "ToolRegistry",
+    "ToolSelection",
     "get_strands_tool_group",
     "get_strands_tools",
     "import_strands_tool",

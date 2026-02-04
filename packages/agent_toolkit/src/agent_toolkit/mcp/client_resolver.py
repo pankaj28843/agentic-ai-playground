@@ -10,7 +10,7 @@ import logging
 from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
-from agent_toolkit.config.new_loader import NewConfigLoader
+from agent_toolkit.config.service import get_config_service
 from agent_toolkit.mcp.registry import get_client
 
 if TYPE_CHECKING:
@@ -60,8 +60,5 @@ def get_mcp_clients_for_profile(profile: AgentProfile) -> list[Any]:
 
 @lru_cache(maxsize=1)
 def _load_tool_groups() -> dict[str, Any]:
-    schema, validation = NewConfigLoader().load()
-    if not validation.valid:
-        msg = f"Configuration validation failed: {validation.errors}"
-        raise ValueError(msg)
+    schema = get_config_service().get_schema()
     return schema.tool_groups

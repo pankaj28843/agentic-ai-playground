@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import logging
-import tomllib
 from typing import TYPE_CHECKING, Any
 
 from strands.multiagent import GraphBuilder, Swarm
 
 from agent_toolkit.agents import AgentFactory
-from agent_toolkit.config import expand_agent_tools, load_profiles
-from agent_toolkit.config.config_paths import resolve_config_path
+from agent_toolkit.config import load_profiles
+from agent_toolkit.config.service import get_config_service
 from agent_toolkit.mcp.client_resolver import get_mcp_clients_for_profile
 from agent_toolkit.tools import DEFAULT_TOOL_REGISTRY
 
@@ -30,30 +29,12 @@ def _apply_profile_overrides(
     if model_override:
         updates["model"] = model_override
     if tool_groups_override is not None:
-        tools = expand_agent_tools(profile.name, tool_groups_override)
+        tools = get_config_service().expand_agent_tools(profile.name, tool_groups_override)
         updates["tools"] = tools
         updates["tool_groups"] = list(tool_groups_override)
     if not updates:
         return profile
     return profile.model_copy(update=updates)
-
-
-def _load_graph_templates() -> dict[str, dict[str, Any]]:
-    path = resolve_config_path("graphs")
-    if not path.exists():
-        return {}
-    with path.open("rb") as file:
-        data = tomllib.load(file)
-    return {name: dict(value) for name, value in data.get("graphs", {}).items()}
-
-
-def _load_swarm_templates() -> dict[str, dict[str, Any]]:
-    path = resolve_config_path("swarms")
-    if not path.exists():
-        return {}
-    with path.open("rb") as file:
-        data = tomllib.load(file)
-    return {name: dict(value) for name, value in data.get("swarms", {}).items()}
 
 
 def _load_profiles_for_settings(_settings: Settings) -> dict[str, Any]:
@@ -76,7 +57,7 @@ def build_graph(
 
     Supports model override per node and run-level overrides for all nodes.
     """
-    templates = _load_graph_templates()
+    templates = get_config_service().list_graph_templates()
     template = templates.get(template_name)
     if template is None:
         available = list(templates.keys())
@@ -156,7 +137,7 @@ def build_swarm(
 
     Supports model override per agent and run-level overrides for all agents.
     """
-    templates = _load_swarm_templates()
+    templates = get_config_service().list_swarm_templates()
     template = templates.get(template_name)
     if template is None:
         available = list(templates.keys())

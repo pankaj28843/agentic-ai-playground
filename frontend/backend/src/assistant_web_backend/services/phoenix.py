@@ -10,9 +10,8 @@ import logging
 import urllib.error
 import urllib.request
 
-from agent_toolkit.config import load_settings
-
 from assistant_web_backend.models.config import PhoenixConfigResponse
+from assistant_web_backend.services.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +85,7 @@ class PhoenixService:
     @classmethod
     def bootstrap(cls) -> None:
         """Bootstrap Phoenix project on application startup."""
-        settings = load_settings()
+        settings = get_settings()
         if not settings.phoenix_enabled:
             logger.debug("Phoenix not enabled, skipping bootstrap")
             return
@@ -122,7 +121,7 @@ class PhoenixService:
     @classmethod
     def get_config(cls) -> PhoenixConfigResponse:
         """Build Phoenix configuration from settings."""
-        settings = load_settings()
+        settings = get_settings()
         if not settings.phoenix_enabled:
             return PhoenixConfigResponse(enabled=False)
 
@@ -161,7 +160,7 @@ class PhoenixService:
         """
         if not cls._public_url or not cls._project_id:
             # Try to initialize from settings if not bootstrapped
-            settings = load_settings()
+            settings = get_settings()
             if not settings.phoenix_enabled:
                 return None
             cls._public_url = settings.phoenix_public_url or settings.phoenix_collector_endpoint
@@ -181,7 +180,7 @@ class PhoenixService:
         """
         if not cls._public_url or not cls._project_id:
             # Try to initialize from settings if not bootstrapped
-            settings = load_settings()
+            settings = get_settings()
             if not settings.phoenix_enabled:
                 return None
             cls._public_url = settings.phoenix_public_url or settings.phoenix_collector_endpoint

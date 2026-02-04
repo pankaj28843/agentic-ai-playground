@@ -17,6 +17,7 @@ from agent_toolkit.compaction.models import (
     FileOps,
     Summarizer,
 )
+from agent_toolkit.compaction.service import StreamCompactionDecision, StreamCompactionPolicy
 from agent_toolkit.compaction.utils import (
     estimate_message_tokens,
     estimate_tokens,
@@ -33,6 +34,8 @@ __all__ = [
     "CompactionResult",
     "CompactionSettings",
     "FileOps",
+    "StreamCompactionDecision",
+    "StreamCompactionPolicy",
     "Summarizer",
     "estimate_message_tokens",
     "estimate_tokens",

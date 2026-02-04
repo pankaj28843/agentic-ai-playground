@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -76,12 +77,14 @@ class Storage:
         existing = self.fetch_thread(remote_id)
         if existing:
             return existing
-        self._execute(
-            """INSERT INTO threads
-               (id, title, status, created_at, updated_at, model_override, tool_groups_override)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (remote_id, None, "regular", now, now, None, None),
-        )
+        with self._connection() as conn:
+            self._execute(
+                """INSERT INTO threads
+                   (id, title, status, created_at, updated_at, model_override, tool_groups_override)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (remote_id, None, "regular", now, now, None, None),
+                conn=conn,
+            )
         return ThreadRecord(remote_id, None, "regular", now, now, None, None)
 
     def fetch_thread(self, remote_id: str) -> ThreadRecord | None:
@@ -117,12 +120,14 @@ class Storage:
             if tool_groups_override is not None
             else None
         )
-        self._execute(
-            """UPDATE threads
-               SET model_override = ?, tool_groups_override = ?, updated_at = ?
-               WHERE id = ?""",
-            (model_override, tool_groups_value, _timestamp(), remote_id),
-        )
+        with self._connection() as conn:
+            self._execute(
+                """UPDATE threads
+                   SET model_override = ?, tool_groups_override = ?, updated_at = ?
+                   WHERE id = ?""",
+                (model_override, tool_groups_value, _timestamp(), remote_id),
+                conn=conn,
+            )
 
     def rename_thread(self, remote_id: str, title: str) -> None:
         """Rename a thread by ID."""
@@ -174,32 +179,35 @@ class Storage:
 
     def append_message(self, record: MessageRecord) -> None:
         """Persist a message to storage."""
-        self._execute(
-            """INSERT OR REPLACE INTO messages
-               (id, thread_id, role, content, created_at, phoenix_trace_id,
-                run_profile, run_mode, execution_mode, entrypoint_reference,
-                model_id, phoenix_session_id, session_entry_id)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-            (
-                record.message_id,
-                record.thread_id,
-                record.role,
-                json.dumps(record.content, ensure_ascii=True),
-                record.created_at,
-                record.phoenix_trace_id,
-                record.run_profile,
-                record.run_mode,
-                record.execution_mode,
-                record.entrypoint_reference,
-                record.model_id,
-                record.phoenix_session_id,
-                record.session_entry_id,
-            ),
-        )
-        self._execute(
-            "UPDATE threads SET updated_at = ? WHERE id = ?",
-            (_timestamp(), record.thread_id),
-        )
+        with self._connection() as conn:
+            self._execute(
+                """INSERT OR REPLACE INTO messages
+                   (id, thread_id, role, content, created_at, phoenix_trace_id,
+                    run_profile, run_mode, execution_mode, entrypoint_reference,
+                    model_id, phoenix_session_id, session_entry_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    record.message_id,
+                    record.thread_id,
+                    record.role,
+                    json.dumps(record.content, ensure_ascii=True),
+                    record.created_at,
+                    record.phoenix_trace_id,
+                    record.run_profile,
+                    record.run_mode,
+                    record.execution_mode,
+                    record.entrypoint_reference,
+                    record.model_id,
+                    record.phoenix_session_id,
+                    record.session_entry_id,
+                ),
+                conn=conn,
+            )
+            self._execute(
+                "UPDATE threads SET updated_at = ? WHERE id = ?",
+                (_timestamp(), record.thread_id),
+                conn=conn,
+            )
 
     def _set_status(self, remote_id: str, status: str) -> None:
         self._execute(
@@ -246,15 +254,41 @@ class Storage:
             _ensure_column(conn, "threads", "tool_groups_override", "TEXT")
             _ensure_column(conn, "messages", "session_entry_id", "TEXT")
 
-    def _fetch_all(self, query: str, params: tuple[Any, ...] = ()) -> list[tuple[Any, ...]]:
-        with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.execute(query, params)
-            return cursor.fetchall()
-
-    def _execute(self, query: str, params: tuple[Any, ...]) -> None:
-        with sqlite3.connect(self._db_path) as conn:
-            conn.execute(query, params)
+    @contextmanager
+    def _connection(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self._db_path)
+        try:
+            yield conn
             conn.commit()
+        finally:
+            conn.close()
+
+    def _fetch_all(
+        self,
+        query: str,
+        params: tuple[Any, ...] = (),
+        *,
+        conn: sqlite3.Connection | None = None,
+    ) -> list[tuple[Any, ...]]:
+        if conn is None:
+            with self._connection() as connection:
+                cursor = connection.execute(query, params)
+                return cursor.fetchall()
+        cursor = conn.execute(query, params)
+        return cursor.fetchall()
+
+    def _execute(
+        self,
+        query: str,
+        params: tuple[Any, ...],
+        *,
+        conn: sqlite3.Connection | None = None,
+    ) -> None:
+        if conn is None:
+            with self._connection() as connection:
+                connection.execute(query, params)
+            return
+        conn.execute(query, params)
 
 
 def _timestamp() -> str:

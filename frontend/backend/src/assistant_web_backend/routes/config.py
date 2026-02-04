@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from agent_toolkit.config import load_settings
-from agent_toolkit.config.new_loader import NewConfigLoader
+from agent_toolkit.config import get_config_service
 from agent_toolkit.providers import load_providers
 from fastapi import APIRouter, HTTPException
 
@@ -24,7 +23,7 @@ from assistant_web_backend.models.resources import (
 from assistant_web_backend.services.bedrock_metadata import fetch_bedrock_overrides
 from assistant_web_backend.services.phoenix import PhoenixService
 from assistant_web_backend.services.resources import load_resources
-from assistant_web_backend.services.runtime import RuntimeService
+from assistant_web_backend.services.runtime import get_runtime
 
 router = APIRouter(prefix="/api", tags=["config"])
 
@@ -46,7 +45,7 @@ def list_profiles() -> ProfilesResponse:
     """List available profiles and run modes for the runtime."""
     # Get runtime first
     try:
-        runtime = RuntimeService.get_runtime()
+        runtime = get_runtime()
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
@@ -109,10 +108,11 @@ def list_resources() -> ResourcesResponse:
 @router.get("/settings", response_model=SettingsResponse)
 def list_settings() -> SettingsResponse:
     """List settings metadata for the UI (models, tool groups, defaults)."""
-    loader = NewConfigLoader()
-    schema, validation = loader.load()
+    snapshot = get_config_service().load_snapshot()
+    schema = snapshot.schema
+    validation = snapshot.validation
     registry = load_providers()
-    settings = load_settings()
+    settings = snapshot.settings
     bedrock_overrides = fetch_bedrock_overrides()
     models = bedrock_overrides.models or sorted(registry.list_models())
 

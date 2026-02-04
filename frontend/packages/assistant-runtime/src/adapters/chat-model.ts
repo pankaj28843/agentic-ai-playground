@@ -6,16 +6,12 @@ import type { ChatModelAdapter, ChatModelRunResult } from "@assistant-ui/react";
 import { ApiClient, phoenixMetadataEvents, runtimeMetadataEvents } from "@agentic-ai-playground/api-client";
 import type { RunOverrides } from "../types";
 import { toApiMessage } from "../converters";
+import { normalizeStreamPayload, parseStreamLine } from "../stream/normalize";
 
 const baseUrl =
   (import.meta as { env?: Record<string, string> }).env?.VITE_API_BASE_URL ?? "";
 
 const api = new ApiClient(baseUrl);
-
-// Content part types that assistant-ui natively supports for rendering.
-// Use data parts for trace-only payloads (agent-event) so we can inspect them later
-// without breaking assistant-ui rendering.
-const ASSISTANT_UI_SUPPORTED_TYPES = new Set(["text", "tool-call", "reasoning", "data"]);
 
 /**
  * Create a ChatModelAdapter for streaming responses from the backend.
@@ -70,78 +66,21 @@ export const createChatAdapter = (
       const lines = buffer.split("\n");
       buffer = lines.pop() ?? "";
       for (const line of lines) {
-        if (!line.trim()) {
+        const payload = parseStreamLine(line);
+        if (!payload) {
+          console.warn("Failed to parse stream line:", line);
           continue;
         }
-        try {
-          const payload = JSON.parse(line) as {
-            content?: Array<{
-              type: string;
-              text?: string;
-              toolName?: string;
-              toolCallId?: string;
-              args?: unknown;
-              argsText?: string;
-              result?: unknown;
-              isError?: boolean;
-            }>;
-            text?: string;
-            phoenixTraceId?: string;
-            phoenixSessionId?: string;
-            runMode?: string;
-            profileName?: string;
-            modelId?: string;
-            executionMode?: string;
-            entrypointReference?: string;
-          };
 
-          // Emit Phoenix metadata when received (usually on final chunk)
-          if (payload.phoenixTraceId || payload.phoenixSessionId) {
-            phoenixMetadataEvents.emit({
-              traceId: payload.phoenixTraceId,
-              sessionId: payload.phoenixSessionId,
-            });
-          }
-
-          // Emit runtime metadata when received (on final chunk)
-          if (
-            payload.runMode ||
-            payload.profileName ||
-            payload.modelId ||
-            payload.executionMode ||
-            payload.entrypointReference
-          ) {
-            runtimeMetadataEvents.emit({
-              runMode: payload.runMode,
-              profileName: payload.profileName,
-              modelId: payload.modelId,
-              executionMode: payload.executionMode,
-              entrypointReference: payload.entrypointReference,
-            });
-          }
-
-          if (payload.content && Array.isArray(payload.content)) {
-            const mappedContent = payload.content.map((part) => {
-              if (part.type === "agent-event") {
-                return {
-                  type: "data",
-                  name: "agent-event",
-                  data: part,
-                };
-              }
-              return part;
-            });
-            const supportedContent = mappedContent.filter(
-              (part) => ASSISTANT_UI_SUPPORTED_TYPES.has(part.type)
-            );
-            if (supportedContent.length > 0) {
-              yield { content: supportedContent as ChatModelRunResult["content"] };
-            }
-          } else if (payload.text) {
-            yield { content: [{ type: "text" as const, text: payload.text }] };
-          }
-        } catch {
-          console.warn("Failed to parse stream line:", line);
+        const normalized = normalizeStreamPayload(payload);
+        if (normalized.phoenixMeta) {
+          phoenixMetadataEvents.emit(normalized.phoenixMeta);
+        }
+        if (normalized.runtimeMeta) {
+          runtimeMetadataEvents.emit(normalized.runtimeMeta);
+        }
+        if (normalized.content && normalized.content.length > 0) {
+          yield { content: normalized.content as ChatModelRunResult["content"] };
         }
       }
     }

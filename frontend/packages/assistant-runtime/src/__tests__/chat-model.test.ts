@@ -33,6 +33,12 @@ describe("createChatAdapter", () => {
             agentName: "agent-1",
             eventType: "start",
           },
+          {
+            type: "tool-call",
+            toolCallId: "call-1",
+            toolName: "tool",
+            argsText: "{\"q\":\"value\"}",
+          },
         ],
       }) + "\n";
 
@@ -46,7 +52,7 @@ describe("createChatAdapter", () => {
 
     const runChat = vi.spyOn(api, "runChat").mockResolvedValue(response);
 
-    const chunks = [] as Array<{ content: Array<{ type: string; name?: string }> }>;
+    const chunks = [] as Array<{ content: Array<{ type: string; name?: string; args?: unknown }> }>;
     for await (const chunk of adapter.run({ messages: [], abortSignal: undefined, unstable_threadId: "t1" })) {
       chunks.push(chunk as { content: Array<{ type: string; name?: string }> });
     }
@@ -64,6 +70,8 @@ describe("createChatAdapter", () => {
 
     expect(chunks[0]?.content[0]?.type).toBe("data");
     expect(chunks[0]?.content[0]?.name).toBe("agent-event");
+    const toolPart = chunks[0]?.content.find((part) => part.type === "tool-call");
+    expect(toolPart?.args).toEqual({ q: "value" });
 
     runMode = "graph";
     overrides = { modelOverride: "model-b", toolGroupsOverride: null };

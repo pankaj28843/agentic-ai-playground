@@ -1,9 +1,9 @@
-from agent_toolkit.multiagent import _load_graph_templates, _load_swarm_templates
+from agent_toolkit.config.service import ConfigService
 
 
 def test_graph_templates_load() -> None:
     """Test that graph templates load from config."""
-    graphs = _load_graph_templates()
+    graphs = ConfigService().list_graph_templates()
     # Should have at least one graph template
     assert len(graphs) > 0
     # Check that templates have expected structure
@@ -14,7 +14,7 @@ def test_graph_templates_load() -> None:
 
 def test_swarm_templates_load() -> None:
     """Test that swarm templates load from config."""
-    swarms = _load_swarm_templates()
+    swarms = ConfigService().list_swarm_templates()
     # Should have at least one swarm template
     assert len(swarms) > 0
     # Check that templates have expected structure

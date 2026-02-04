@@ -30,6 +30,11 @@ class Settings(BaseModel, frozen=True):
     swarm_max_handoffs: int = 12
     swarm_max_iterations: int = 12
     swarm_preset: str = "default"
+    capability_allowlist: list[str] = Field(default_factory=list)
+    capability_denylist: list[str] = Field(default_factory=list)
+    stream_compaction_enabled: bool = False
+    compaction_keep_recent_tokens: int = 20000
+    compaction_reserve_tokens: int = 16384
     # Phoenix telemetry settings
     phoenix_enabled: bool = False
     phoenix_collector_endpoint: str = ""
@@ -98,6 +103,11 @@ def load_settings() -> Settings:
         swarm_max_handoffs=int(os.getenv("SWARM_MAX_HANDOFFS", "12")),
         swarm_max_iterations=int(os.getenv("SWARM_MAX_ITERATIONS", "12")),
         swarm_preset=os.getenv("SWARM_PRESET", "default"),
+        capability_allowlist=_parse_list(os.getenv("CAPABILITY_ALLOWLIST", "")),
+        capability_denylist=_parse_list(os.getenv("CAPABILITY_DENYLIST", "")),
+        stream_compaction_enabled=os.getenv("STREAM_COMPACTION_ENABLED", "false").lower() == "true",
+        compaction_keep_recent_tokens=int(os.getenv("COMPACTION_KEEP_RECENT_TOKENS", "20000")),
+        compaction_reserve_tokens=int(os.getenv("COMPACTION_RESERVE_TOKENS", "16384")),
         phoenix_enabled=phoenix_enabled,
         phoenix_collector_endpoint=phoenix_collector_endpoint,
         phoenix_grpc_port=int(os.getenv("PHOENIX_GRPC_PORT", "4317")),

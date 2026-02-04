@@ -2,8 +2,6 @@
  * Hook for generating Phoenix deep links.
  */
 
-import { useMemo } from "react";
-
 import { useAppDataSelector } from "../state/appDataContext";
 
 export interface PhoenixDeepLinks {
@@ -33,26 +31,22 @@ export function usePhoenixLinks(traceId?: string, sessionId?: string): PhoenixDe
   const baseUrl = config?.baseUrl;
   const projectId = config?.projectId;
 
-  const getTraceUrl = useMemo(() => {
-    return (id: string): string | null => {
-      if (!enabled || !baseUrl || !projectId || !id) {
-        return null;
-      }
-      // Encode trace ID as base64 for Phoenix URL format
-      const encodedId = btoa(`Trace:${id}`);
-      return `${baseUrl}/projects/${projectId}/traces/${encodedId}`;
-    };
-  }, [enabled, baseUrl, projectId]);
+  const getTraceUrl = (id: string): string | null => {
+    if (!enabled || !baseUrl || !projectId || !id) {
+      return null;
+    }
+    // Encode trace ID as base64 for Phoenix URL format
+    const encodedId = btoa(`Trace:${id}`);
+    return `${baseUrl}/projects/${projectId}/traces/${encodedId}`;
+  };
 
-  const getSessionUrl = useMemo(() => {
-    return (id: string): string | null => {
-      if (!enabled || !baseUrl || !projectId || !id) {
-        return null;
-      }
-      // Session URL format (sessions page with filter)
-      return `${baseUrl}/projects/${projectId}/sessions?sessionId=${encodeURIComponent(id)}`;
-    };
-  }, [enabled, baseUrl, projectId]);
+  const getSessionUrl = (id: string): string | null => {
+    if (!enabled || !baseUrl || !projectId || !id) {
+      return null;
+    }
+    // Session URL format (sessions page with filter)
+    return `${baseUrl}/projects/${projectId}/sessions?sessionId=${encodeURIComponent(id)}`;
+  };
 
   const resolvedTraceUrl = traceId ? getTraceUrl(traceId) : null;
   const resolvedSessionUrl = sessionId ? getSessionUrl(sessionId) : null;

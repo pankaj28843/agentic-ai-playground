@@ -16,6 +16,7 @@ from agent_toolkit.telemetry.evaluator import (
     get_online_evaluator,
     reset_evaluator,
 )
+from agent_toolkit.telemetry.logging_utils import install_trace_log_filter
 from agent_toolkit.telemetry.phoenix import (
     PhoenixConfig,
     PhoenixTelemetryProvider,
@@ -37,6 +38,7 @@ __all__ = [
     "get_current_trace_id",
     "get_online_evaluator",
     "get_telemetry_provider",
+    "install_trace_log_filter",
     "reset_evaluator",
     "setup_telemetry",
     "shutdown_telemetry",
@@ -72,8 +74,10 @@ def setup_telemetry(settings: Settings) -> PhoenixTelemetryProvider | None:
 
     if provider.setup() is not None:
         _telemetry_provider = provider
+        install_trace_log_filter()
         return provider
 
+    install_trace_log_filter()
     return None
 
 

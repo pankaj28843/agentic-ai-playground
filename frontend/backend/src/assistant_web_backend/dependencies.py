@@ -13,6 +13,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from assistant_web_backend.services.runtime import get_runtime as _get_runtime
 from assistant_web_backend.storage import Storage
 
 if TYPE_CHECKING:
@@ -36,10 +37,5 @@ def get_storage() -> Storage:
 
 
 def get_runtime() -> AgentRuntime:
-    """Get the AgentRuntime instance.
-
-    Lazy import to avoid circular dependencies with agent_toolkit.
-    """
-    from assistant_web_backend.services.runtime import RuntimeService  # noqa: PLC0415
-
-    return RuntimeService.get_runtime()
+    """Get the AgentRuntime instance."""
+    return _get_runtime()

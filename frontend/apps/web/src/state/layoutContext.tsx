@@ -1,5 +1,5 @@
 import type { MouseEvent as ReactMouseEvent, ReactNode, TouchEvent as ReactTouchEvent } from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 /* eslint-disable react-refresh/only-export-components */
 import { createActorContext } from "@xstate/react";
@@ -128,28 +128,14 @@ export const useLayout = () => {
   const snapshot = LayoutActorContext.useSelector((state) => state);
   const { sidebarWidth, traceWidth, isResizing } = snapshot.context;
 
-  const startSidebarResize = useCallback(
-    (clientX: number) => {
-      actorRef.send({ type: "SIDEBAR.RESIZE.START", clientX });
-    },
-    [actorRef],
-  );
-
-  const startTraceResize = useCallback(
-    (clientX: number) => {
-      actorRef.send({ type: "TRACE.RESIZE.START", clientX });
-    },
-    [actorRef],
-  );
-
   const sidebarResizeHandleProps: ResizeHandleProps = {
     onMouseDown: (event) => {
       event.preventDefault();
-      startSidebarResize(event.clientX);
+      actorRef.send({ type: "SIDEBAR.RESIZE.START", clientX: event.clientX });
     },
     onTouchStart: (event) => {
       if (event.touches.length === 1) {
-        startSidebarResize(event.touches[0].clientX);
+        actorRef.send({ type: "SIDEBAR.RESIZE.START", clientX: event.touches[0].clientX });
       }
     },
   };
@@ -157,11 +143,11 @@ export const useLayout = () => {
   const traceResizeHandleProps: ResizeHandleProps = {
     onMouseDown: (event) => {
       event.preventDefault();
-      startTraceResize(event.clientX);
+      actorRef.send({ type: "TRACE.RESIZE.START", clientX: event.clientX });
     },
     onTouchStart: (event) => {
       if (event.touches.length === 1) {
-        startTraceResize(event.touches[0].clientX);
+        actorRef.send({ type: "TRACE.RESIZE.START", clientX: event.touches[0].clientX });
       }
     },
   };

@@ -14,12 +14,17 @@ import os
 import sys
 import warnings
 
+from agent_toolkit.telemetry import get_current_trace_id
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from assistant_web_backend.routes import chat_router, config_router, threads_router
 from assistant_web_backend.services.phoenix import PhoenixService
-from assistant_web_backend.services.runtime import RuntimeService
+from assistant_web_backend.services.request_context import (
+    get_request_id,
+    request_id_middleware,
+)
+from assistant_web_backend.services.runtime import get_runtime
 
 
 def _allowed_origins() -> list[str]:
@@ -59,7 +64,17 @@ logger = logging.getLogger("assistant_web_backend")
 logger.setLevel(logging.INFO)
 if not logger.handlers:
     handler = logging.StreamHandler()
-    handler.setFormatter(logging.Formatter("%(name)s - %(levelname)s - %(message)s"))
+    handler.setFormatter(
+        logging.Formatter("%(name)s - %(levelname)s - %(request_id)s - %(trace_id)s - %(message)s")
+    )
+
+    class _RequestIdFilter(logging.Filter):
+        def filter(self, record: logging.LogRecord) -> bool:
+            record.request_id = get_request_id() or "-"
+            record.trace_id = get_current_trace_id() or "-"
+            return True
+
+    handler.addFilter(_RequestIdFilter())
     logger.addHandler(handler)
 
 # Suppress noisy OpenTelemetry context errors from Strands SDK async generators
@@ -67,6 +82,7 @@ logging.getLogger("opentelemetry.context").setLevel(logging.CRITICAL)
 
 # Create FastAPI app
 app = FastAPI(title="Assistant Web Backend", version="1.0.0")
+app.middleware("http")(request_id_middleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins(),
@@ -88,7 +104,7 @@ async def startup_event():
 
     # Load runtime early to surface config validation warnings on boot
     try:
-        RuntimeService.get_runtime()
+        get_runtime()
     except RuntimeError as e:
         logger.warning("Runtime bootstrap failed: %s", e)
 

@@ -1,5 +1,5 @@
 import { ArrowRight, Brain, ChevronDown, ChevronRight, Clock, ExternalLink, User, Users, Wrench, X } from "lucide-react";
-import type { FC } from "react";
+import type { FC, MouseEvent } from "react";
 import { useEffect, useMemo, useRef } from "react";
 import hljs from "highlight.js/lib/core";
 import json from "highlight.js/lib/languages/json";
@@ -110,21 +110,17 @@ export const TracePanel: FC<TracePanelProps> = ({
   // Build Phoenix deep link URLs
   // Prefer full URLs from backend (works across browsers with public URL)
   // Fall back to building locally if legacy fields provided
-  const phoenixTraceUrl = useMemo(() => {
-    // Prefer backend-provided URL
-    if (phoenix?.traceUrl) return phoenix.traceUrl;
-    // Fallback to local building (deprecated)
-    if (!phoenix?.phoenixBaseUrl || !phoenix?.traceId || !phoenix?.projectId) return null;
-    return `${phoenix.phoenixBaseUrl}/projects/${phoenix.projectId}/traces/${phoenix.traceId}`;
-  }, [phoenix]);
+  const phoenixTraceUrl =
+    phoenix?.traceUrl ??
+    (phoenix?.phoenixBaseUrl && phoenix?.traceId && phoenix?.projectId
+      ? `${phoenix.phoenixBaseUrl}/projects/${phoenix.projectId}/traces/${phoenix.traceId}`
+      : null);
 
-  const phoenixSessionUrl = useMemo(() => {
-    // Prefer backend-provided URL
-    if (phoenix?.sessionUrl) return phoenix.sessionUrl;
-    // Fallback to local building (deprecated)
-    if (!phoenix?.phoenixBaseUrl || !phoenix?.sessionId || !phoenix?.projectId) return null;
-    return `${phoenix.phoenixBaseUrl}/projects/${phoenix.projectId}/sessions?sessionId=${phoenix.sessionId}`;
-  }, [phoenix]);
+  const phoenixSessionUrl =
+    phoenix?.sessionUrl ??
+    (phoenix?.phoenixBaseUrl && phoenix?.sessionId && phoenix?.projectId
+      ? `${phoenix.phoenixBaseUrl}/projects/${phoenix.projectId}/sessions?sessionId=${phoenix.sessionId}`
+      : null);
 
   // When used inside resizable Panel, always render content (Panel handles visibility)
   // When used standalone (mobile), check isOpen
@@ -367,10 +363,6 @@ const TraceItemView: FC<{
   }
 
   // Tool call
-  const argsText = typeof item.args === "string" ? item.args : JSON.stringify(item.args ?? {}, null, 2);
-
-  // Format result: if it's a string, try to parse and prettify; handle escaped newlines
-  // Unwrap MCP content format: [{"text": "JSON string"}] -> parsed JSON
   const unwrapMcpContent = (data: unknown): unknown => {
     if (Array.isArray(data) && data.length > 0) {
       // Check if it's MCP format: [{text: "..."}, ...]
@@ -416,15 +408,18 @@ const TraceItemView: FC<{
     const formatted = JSON.stringify(unwrapped, null, 2);
     return formatted.replace(/\\n/g, "\n").replace(/\\t/g, "\t");
   };
-
-  const resolvedResult = showFullOutput && item.resultFull !== undefined ? item.resultFull : item.result;
-  const resultText = resolvedResult !== undefined ? formatResult(resolvedResult) : null;
   const toolStatusClass =
     item.status === "complete"
       ? styles.traceItemStatusComplete
       : item.status === "error"
         ? styles.traceItemStatusError
         : "";
+
+  const resolvedResult = showFullOutput && item.resultFull !== undefined ? item.resultFull : item.result;
+  const argsText = expanded
+    ? (typeof item.args === "string" ? item.args : JSON.stringify(item.args ?? {}, null, 2))
+    : "";
+  const resultText = expanded && resolvedResult !== undefined ? formatResult(resolvedResult) : null;
 
   return (
     <div className={cx(styles.traceItem, item.isError && styles.traceToolError)}>
@@ -503,8 +498,19 @@ export const TraceIndicator: FC<TraceIndicatorProps> = ({
     return null;
   }
 
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onClick();
+  };
+
   return (
-    <button className={styles.traceIndicator} onClick={onClick} type="button" aria-label="View agent trace">
+    <button
+      className={styles.traceIndicator}
+      onClick={handleClick}
+      type="button"
+      aria-label="View agent trace"
+    >
       <Clock className={styles.traceIndicatorIcon} aria-hidden="true" />
       <span className={styles.traceIndicatorText}>
         {isRunning ? "Live trace" : `${total} step${total !== 1 ? "s" : ""}`}

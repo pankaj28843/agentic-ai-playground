@@ -1,5 +1,14 @@
 from agent_toolkit.agents import AgentFactory
-from agent_toolkit.config import AgentProfile, Settings, load_profiles, load_settings
+from agent_toolkit.application import ExecutionPipeline
+from agent_toolkit.config import (
+    AgentProfile,
+    ConfigService,
+    ConfigSnapshot,
+    Settings,
+    get_config_service,
+    load_profiles,
+    load_settings,
+)
 from agent_toolkit.evals import EvalCase, EvalConfig, EvalResult, EvalRunner
 from agent_toolkit.execution import (
     ExecutionContext,
@@ -13,6 +22,7 @@ from agent_toolkit.export import export_runs
 from agent_toolkit.mcp.providers import shutdown_mcp_clients
 from agent_toolkit.memory import MemoryConfig, build_memory_session_manager
 from agent_toolkit.metrics import AgentLoopMetrics, extract_metrics_from_event
+from agent_toolkit.models.runtime import RuntimeAgent
 from agent_toolkit.multiagent import build_graph, build_swarm
 from agent_toolkit.run_history import (
     RunMetadata,
@@ -22,7 +32,7 @@ from agent_toolkit.run_history import (
     new_run_id,
     write_snapshot,
 )
-from agent_toolkit.runtime import AgentRuntime, RuntimeAgent
+from agent_toolkit.runtime import AgentRuntime
 from agent_toolkit.session_browser import list_sessions
 from agent_toolkit.streaming import StreamChunk, stream_agent
 from agent_toolkit.tools import (
@@ -30,6 +40,8 @@ from agent_toolkit.tools import (
     MCPPromptClient,
     MCPResourceClient,
     PromptDefinition,
+    ToolCatalog,
+    ToolSelection,
 )
 from agent_toolkit.utils import utc_timestamp
 
@@ -39,11 +51,14 @@ __all__ = [
     "AgentLoopMetrics",
     "AgentProfile",
     "AgentRuntime",
+    "ConfigService",
+    "ConfigSnapshot",
     "EvalCase",
     "EvalConfig",
     "EvalResult",
     "EvalRunner",
     "ExecutionContext",
+    "ExecutionPipeline",
     "ExecutionResult",
     "ExecutionStrategy",
     "GraphStrategy",
@@ -58,12 +73,15 @@ __all__ = [
     "SingleAgentStrategy",
     "StreamChunk",
     "SwarmStrategy",
+    "ToolCatalog",
+    "ToolSelection",
     "build_graph",
     "build_memory_session_manager",
     "build_swarm",
     "compute_run_metadata",
     "export_runs",
     "extract_metrics_from_event",
+    "get_config_service",
     "list_sessions",
     "list_snapshots",
     "load_profiles",

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 /* eslint-disable react-refresh/only-export-components */
 import { createActorContext } from "@xstate/react";
@@ -54,7 +54,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 const ThemeEffects = () => {
   const actorRef = ThemeActorContext.useActorRef();
   const theme = ThemeActorContext.useSelector((state) => state.context.theme);
-  const systemTheme = ThemeActorContext.useSelector((state) => state.context.systemTheme);
 
   useEffect(() => {
     applyTheme(theme);
@@ -77,12 +76,6 @@ const ThemeEffects = () => {
     return () => mediaQuery.removeEventListener("change", handler);
   }, [actorRef]);
 
-  useEffect(() => {
-    if (theme === "system") {
-      applyTheme("system");
-    }
-  }, [systemTheme, theme]);
-
   return null;
 };
 
@@ -91,9 +84,7 @@ export const useTheme = () => {
   const theme = ThemeActorContext.useSelector((state) => state.context.theme);
   const systemTheme = ThemeActorContext.useSelector((state) => state.context.systemTheme);
 
-  const resolvedTheme = useMemo(() => {
-    return theme === "system" ? systemTheme : theme;
-  }, [systemTheme, theme]);
+  const resolvedTheme = theme === "system" ? systemTheme : theme;
 
   const setTheme = (value: Theme) => {
     actorRef.send({ type: "THEME.SET", value });
