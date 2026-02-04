@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useCallback } from "react";
 
+/* eslint-disable react-refresh/only-export-components */
 import { createActorContext } from "@xstate/react";
 import type { SnapshotFrom } from "xstate";
 

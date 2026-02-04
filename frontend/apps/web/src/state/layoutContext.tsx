@@ -1,6 +1,7 @@
 import type { MouseEvent as ReactMouseEvent, ReactNode, TouchEvent as ReactTouchEvent } from "react";
 import { useCallback, useEffect, useRef } from "react";
 
+/* eslint-disable react-refresh/only-export-components */
 import { createActorContext } from "@xstate/react";
 import type { SnapshotFrom } from "xstate";
 

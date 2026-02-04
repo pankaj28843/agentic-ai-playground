@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useThreadList } from "@assistant-ui/react";
 import { ApiClient } from "@agentic-ai-playground/api-client";
 import { setActiveSessionBranch } from "@agentic-ai-playground/assistant-runtime";
+/* eslint-disable react-refresh/only-export-components */
 import { createActorContext } from "@xstate/react";
 
 import type { SessionEntryView, SessionTreeResponse } from "@agentic-ai-playground/api-client";

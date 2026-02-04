@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createActorContext } from "@xstate/react";
 import type { FC, ReactNode } from "react";
 import { useEffect } from "react";

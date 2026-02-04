@@ -409,6 +409,7 @@ const MessageMeta: FC<{ label: string }> = ({ label }) => {
         className={`${styles.messageStatus} ${
           statusLabel === "thinking" ? styles.messageStatusThinking : ""
         }`}
+        data-testid={`message-status-${label.toLowerCase()}`}
       >
         {statusLabel}
       </span>
