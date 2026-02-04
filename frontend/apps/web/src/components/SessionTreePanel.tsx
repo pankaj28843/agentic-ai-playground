@@ -1,5 +1,4 @@
 import type { CSSProperties, FC } from "react";
-import { useMemo } from "react";
 import { useAssistantApi } from "@assistant-ui/react";
 import { ChevronRight, RefreshCw, X } from "lucide-react";
 
@@ -27,7 +26,7 @@ export const SessionTreePanel: FC = () => {
   } = useSessionTree();
 
   const activeEntry = activeEntryId ? entriesById[activeEntryId] : null;
-  const orderedRoots = useMemo(() => tree?.roots ?? [], [tree]);
+  const orderedRoots = tree?.roots ?? [];
 
   const handleInsertSummary = (summary: string) => {
     api.composer().setText(summary.trim());

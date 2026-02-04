@@ -8,7 +8,7 @@ import {
   useThreadRouterSync,
 } from "@agentic-ai-playground/assistant-runtime";
 import { Bot, Loader2, Menu, Monitor, Moon, Sun, X } from "lucide-react";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { SettingsPanel } from "./components/SettingsPanel";
@@ -28,6 +28,9 @@ import { useOverrides } from "./state/useOverrides";
 import { ThemeProvider } from "./state/themeContext";
 import styles from "./App.module.css";
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+const apiClient = new ApiClient(baseUrl);
+
 export const AppContent = ({
   profiles,
   runMode,
@@ -40,7 +43,7 @@ export const AppContent = ({
   const { conversationId } = useParams<{ conversationId?: string }>();
   const navigate = useNavigate();
   const { theme, cycleTheme } = useTheme();
-  const { closeTrace } = useTrace();
+  const { trace, closeTrace } = useTrace();
   const {
     menuOpen,
     toggleMenu,
@@ -82,17 +85,18 @@ export const AppContent = ({
     onThreadChange,
   );
 
-  const handleGoHome = useCallback(() => {
+
+  const handleGoHome = () => {
     if (window.location.pathname !== "/new") {
       navigate("/new", { replace: true });
     }
-  }, [navigate]);
+  };
 
-  const handleLogoClick = useCallback(() => {
+  const handleLogoClick = () => {
     if (window.location.pathname !== "/new") {
       navigate("/new");
     }
-  }, [navigate]);
+  };
 
   const renderMainContent = () => {
     if (isLoadingThread && conversationId) {
@@ -111,7 +115,6 @@ export const AppContent = ({
     return <ThreadView />;
   };
 
-  const { trace } = useTrace();
   const isTraceOpen = trace.isOpen;
 
   const {
@@ -252,6 +255,18 @@ export const TracePanelOutlet: React.FC = () => {
   const { trace, expandedItems, fullOutputItems, closeTrace, toggleItemExpanded, toggleItemOutput } =
     useTrace();
   const phoenixConfig = useAppDataSelector((state) => state.context.phoenixConfig);
+  const phoenixLinks =
+    !phoenixConfig?.enabled && !trace.phoenix?.traceUrl && !trace.phoenix?.sessionUrl
+      ? undefined
+      : {
+          traceId: trace.phoenix?.traceId,
+          sessionId: trace.phoenix?.sessionId,
+          traceUrl: trace.phoenix?.traceUrl,
+          sessionUrl: trace.phoenix?.sessionUrl,
+          phoenixBaseUrl: phoenixConfig?.baseUrl,
+          projectName: phoenixConfig?.projectName,
+          projectId: phoenixConfig?.projectId,
+        };
 
   return (
     <TracePanel
@@ -264,19 +279,7 @@ export const TracePanelOutlet: React.FC = () => {
       onToggleExpanded={toggleItemExpanded}
       fullOutputItems={fullOutputItems}
       onToggleFullOutput={toggleItemOutput}
-      phoenix={
-        phoenixConfig?.enabled || trace.phoenix?.traceUrl || trace.phoenix?.sessionUrl
-          ? {
-              traceId: trace.phoenix?.traceId,
-              sessionId: trace.phoenix?.sessionId,
-              traceUrl: trace.phoenix?.traceUrl,
-              sessionUrl: trace.phoenix?.sessionUrl,
-              phoenixBaseUrl: phoenixConfig?.baseUrl,
-              projectName: phoenixConfig?.projectName,
-              projectId: phoenixConfig?.projectId,
-            }
-          : undefined
-      }
+      phoenix={phoenixLinks}
       runtime={trace.runtime}
     />
   );
@@ -288,20 +291,14 @@ export const AppShell = () => {
   const actorRef = useAppDataActor();
   const { modelOverride, toolGroupsOverride } = useOverrides();
 
-  const setRunMode = useCallback(
-    (mode: string) => {
-      actorRef.send({ type: "RUNMODE.SET", value: mode });
-    },
-    [actorRef],
-  );
+  const setRunMode = (mode: string) => {
+    actorRef.send({ type: "RUNMODE.SET", value: mode });
+  };
 
-  const runOverrides: RunOverrides = useMemo(
-    () => ({
-      modelOverride,
-      toolGroupsOverride,
-    }),
-    [modelOverride, toolGroupsOverride],
-  );
+  const runOverrides: RunOverrides = {
+    modelOverride,
+    toolGroupsOverride,
+  };
 
   return (
     <TraceProvider>
@@ -316,11 +313,6 @@ export const AppShell = () => {
 
 export const App = () => {
   const { conversationId } = useParams<{ conversationId?: string }>();
-
-  const apiClient = useMemo(() => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
-    return new ApiClient(baseUrl);
-  }, []);
 
   return (
     <AppDataProvider apiClient={apiClient}>

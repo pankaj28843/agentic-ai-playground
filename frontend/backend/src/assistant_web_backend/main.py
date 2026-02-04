@@ -14,6 +14,7 @@ import os
 import sys
 import warnings
 
+from agent_toolkit.telemetry import get_current_trace_id
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -64,12 +65,13 @@ logger.setLevel(logging.INFO)
 if not logger.handlers:
     handler = logging.StreamHandler()
     handler.setFormatter(
-        logging.Formatter("%(name)s - %(levelname)s - %(request_id)s - %(message)s")
+        logging.Formatter("%(name)s - %(levelname)s - %(request_id)s - %(trace_id)s - %(message)s")
     )
 
     class _RequestIdFilter(logging.Filter):
         def filter(self, record: logging.LogRecord) -> bool:
             record.request_id = get_request_id() or "-"
+            record.trace_id = get_current_trace_id() or "-"
             return True
 
     handler.addFilter(_RequestIdFilter())

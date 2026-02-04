@@ -66,3 +66,8 @@ print(selection.tools)
 - **Stream compaction**: set `STREAM_COMPACTION_ENABLED=true` plus
   `COMPACTION_KEEP_RECENT_TOKENS` / `COMPACTION_RESERVE_TOKENS` to trim long-running
   multiagent prompt contexts before streaming.
+
+## Observability
+
+- **Phoenix tracing**: enabled via settings; trace attributes attach session, profile, and mode.
+- **Trace-aware logging**: a logging filter adds `trace_id` to log records when traces are active.

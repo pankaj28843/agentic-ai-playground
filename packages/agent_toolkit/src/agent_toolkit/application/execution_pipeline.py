@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from agent_toolkit.agents import AgentFactory, build_session_manager
+from agent_toolkit.application.agent_builder import build_runtime_agent
+from agent_toolkit.application.planning import ExecutionPlan, resolve_execution_plan
 from agent_toolkit.compaction import StreamCompactionPolicy
 from agent_toolkit.execution import (
     ExecutionContext,
@@ -14,18 +15,8 @@ from agent_toolkit.execution import (
     SingleAgentStrategy,
     SwarmStrategy,
 )
-from agent_toolkit.hooks import (
-    PlanModeHook,
-    TechDocsWorkflowHook,
-    ToolApprovalHook,
-    ToolTelemetry,
-    ToolTelemetryHook,
-)
-from agent_toolkit.mcp.client_resolver import get_mcp_clients_for_profile
 from agent_toolkit.metrics import extract_metrics_from_event
-from agent_toolkit.models.runtime import RuntimeAgent
 from agent_toolkit.multiagent import build_graph, build_swarm
-from agent_toolkit.plan_mode import PlanModeSettings
 from agent_toolkit.run_history import new_run_id
 from agent_toolkit.snapshot_recorder import build_tool_events_from_telemetry, record_run_snapshot
 from agent_toolkit.stream_utils import (
@@ -42,17 +33,9 @@ if TYPE_CHECKING:
     from agent_toolkit.application.tooling import ToolingBuilder
     from agent_toolkit.config import ConfigService
     from agent_toolkit.config.swarm_presets import SwarmPreset
+    from agent_toolkit.models.runtime import RuntimeAgent
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class ExecutionPlan:
-    """Resolved execution plan for a run."""
-
-    execution_mode: str
-    entrypoint_reference: str
-    metadata: dict[str, Any]
 
 
 class ExecutionPipeline:
@@ -74,14 +57,7 @@ class ExecutionPipeline:
 
     def resolve_plan(self, profile_name: str) -> ExecutionPlan:
         """Resolve profile to execution mode and entrypoint."""
-        execution_mode, entrypoint_reference, metadata = (
-            self._config_service.resolve_execution_mode(profile_name)
-        )
-        return ExecutionPlan(
-            execution_mode=execution_mode,
-            entrypoint_reference=entrypoint_reference,
-            metadata=metadata,
-        )
+        return resolve_execution_plan(self._config_service, profile_name)
 
     def create_agent(
         self,
@@ -97,53 +73,20 @@ class ExecutionPipeline:
         profiles: dict[str, Any] | None = None,
     ) -> RuntimeAgent:
         """Build a runtime agent with telemetry hooks."""
-        resolved_profiles = profiles or self._config_service.build_profiles()
-        profile = resolved_profiles.get(profile_name)
-        if profile is None:
-            msg = f"Unknown agent profile: {profile_name}"
-            raise ValueError(msg)
-
-        profile = self._tooling.apply_profile_overrides(
-            profile, model_override=model_override, tool_groups_override=tool_groups_override
-        )
-
-        telemetry = ToolTelemetry()
-        hooks = [ToolTelemetryHook(telemetry)]
-        plan_mode = PlanModeSettings.from_metadata(profile.metadata)
-        if plan_mode.enabled:
-            hooks.append(PlanModeHook(plan_mode))
-
-        if self._tooling.settings.approval_tools:
-            hooks.append(ToolApprovalHook(self._tooling.settings.approval_tools))
-
-        if "techdocs" in profile.tool_groups:
-            hooks.append(TechDocsWorkflowHook())
-
-        trace_state = invocation_state or {}
-        thread_id = trace_state.get("thread_id", "")
-        message_id = trace_state.get("message_id", "")
-        run_mode = trace_state.get("run_mode", mode)
-
-        trace_attrs = build_trace_attributes(
-            session_id=session_id,
+        return build_runtime_agent(
+            config_service=self._config_service,
+            factory=self._factory,
+            tooling=self._tooling,
             profile_name=profile_name,
-            run_mode=run_mode,
-            thread_id=thread_id,
-            message_id=message_id,
+            session_id=session_id,
+            mode=mode,
+            invocation_state=invocation_state,
             execution_mode=execution_mode,
             entrypoint_reference=entrypoint_reference,
+            model_override=model_override,
+            tool_groups_override=tool_groups_override,
+            profiles=profiles,
         )
-
-        mcp_clients = get_mcp_clients_for_profile(profile)
-
-        agent = self._factory.create_from_profile(
-            profile,
-            session_id=session_id,
-            hooks=hooks,
-            trace_attributes=trace_attrs or None,
-            mcp_clients=mcp_clients if mcp_clients else None,
-        )
-        return RuntimeAgent(profile=profile, agent=agent, telemetry=telemetry)
 
     def run(
         self,

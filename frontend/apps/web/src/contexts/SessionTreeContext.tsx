@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 import { useThreadList } from "@assistant-ui/react";
 import { ApiClient } from "@agentic-ai-playground/api-client";
@@ -25,17 +25,14 @@ export type SessionTreeState = {
 };
 
 const SessionTreeActorContext = createActorContext(sessionTreeMachine);
+const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
+const sessionTreeApiClient = new ApiClient(baseUrl);
 
 export const SessionTreeProvider = ({ children }: { children: ReactNode }) => {
-  const apiClient = useMemo(() => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
-    return new ApiClient(baseUrl);
-  }, []);
-
   return (
     <SessionTreeActorContext.Provider
       logic={sessionTreeMachine}
-      options={{ input: { apiClient } }}
+      options={{ input: { apiClient: sessionTreeApiClient } }}
     >
       <SessionTreeBridge />
       {children}
@@ -73,16 +70,14 @@ const useThreadId = () => {
   const mainThreadId = useThreadList((state) => state.mainThreadId);
   const threadItems = useThreadList((state) => state.threadItems);
 
-  return useMemo(() => {
-    if (!mainThreadId) {
-      return null;
-    }
-    const remoteId = threadItems[mainThreadId]?.remoteId ?? mainThreadId;
-    if (!remoteId || remoteId.startsWith("__")) {
-      return null;
-    }
-    return remoteId;
-  }, [mainThreadId, threadItems]);
+  if (!mainThreadId) {
+    return null;
+  }
+  const remoteId = threadItems[mainThreadId]?.remoteId ?? mainThreadId;
+  if (!remoteId || remoteId.startsWith("__")) {
+    return null;
+  }
+  return remoteId;
 };
 
 export const useSessionTree = () => {
