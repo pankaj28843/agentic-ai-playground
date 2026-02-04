@@ -56,3 +56,13 @@ catalog = ToolCatalog(DEFAULT_TOOL_REGISTRY, get_config_service())
 selection = catalog.expand_tools("default")
 print(selection.tools)
 ```
+
+### Optional Policies
+
+- **Capability policy**: set `CAPABILITY_ALLOWLIST` or `CAPABILITY_DENYLIST` (comma-separated)
+  to filter tool groups by capability. Allowlist keeps groups with matching capabilities (and
+  does not block groups without declared capabilities). Denylist blocks any group containing
+  a denied capability.
+- **Stream compaction**: set `STREAM_COMPACTION_ENABLED=true` plus
+  `COMPACTION_KEEP_RECENT_TOKENS` / `COMPACTION_RESERVE_TOKENS` to trim long-running
+  multiagent prompt contexts before streaming.

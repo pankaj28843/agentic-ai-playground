@@ -37,37 +37,6 @@ def _apply_profile_overrides(
     return profile.model_copy(update=updates)
 
 
-def _load_graph_templates() -> dict[str, dict[str, Any]]:
-    schema = get_config_service().get_schema()
-    templates: dict[str, dict[str, Any]] = {}
-    for name, graph in schema.graphs.items():
-        templates[name] = {
-            "name": graph.name,
-            "description": graph.description,
-            "entry_point": graph.entry_point,
-            "nodes": [{"name": node.name, "agent": node.agent} for node in graph.nodes],
-            "edges": [{"from": edge.from_node, "to": edge.to_node} for edge in graph.edges],
-            "timeouts": graph.timeouts,
-        }
-    return templates
-
-
-def _load_swarm_templates() -> dict[str, dict[str, Any]]:
-    schema = get_config_service().get_schema()
-    templates: dict[str, dict[str, Any]] = {}
-    for name, swarm in schema.swarms.items():
-        templates[name] = {
-            "name": swarm.name,
-            "description": swarm.description,
-            "entry_point": swarm.entry_point,
-            "agents": [{"name": agent.name, "agent": agent.agent} for agent in swarm.agents],
-            "max_handoffs": swarm.max_handoffs,
-            "max_iterations": swarm.max_iterations,
-            "timeouts": swarm.timeouts,
-        }
-    return templates
-
-
 def _load_profiles_for_settings(_settings: Settings) -> dict[str, Any]:
     # No longer need to parse profile_dirs - config_paths handles it
     return load_profiles()
@@ -88,7 +57,7 @@ def build_graph(
 
     Supports model override per node and run-level overrides for all nodes.
     """
-    templates = _load_graph_templates()
+    templates = get_config_service().list_graph_templates()
     template = templates.get(template_name)
     if template is None:
         available = list(templates.keys())
@@ -168,7 +137,7 @@ def build_swarm(
 
     Supports model override per agent and run-level overrides for all agents.
     """
-    templates = _load_swarm_templates()
+    templates = get_config_service().list_swarm_templates()
     template = templates.get(template_name)
     if template is None:
         available = list(templates.keys())

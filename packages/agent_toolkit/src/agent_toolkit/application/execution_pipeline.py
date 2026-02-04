@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from agent_toolkit.agents import AgentFactory, build_session_manager
+from agent_toolkit.compaction import StreamCompactionPolicy
 from agent_toolkit.execution import (
     ExecutionContext,
     GraphStrategy,
@@ -69,6 +70,7 @@ class ExecutionPipeline:
         self._factory = factory
         self._tooling = tooling
         self._swarm_preset = swarm_preset
+        self._stream_compaction = StreamCompactionPolicy.from_settings(tooling.settings)
 
     def resolve_plan(self, profile_name: str) -> ExecutionPlan:
         """Resolve profile to execution mode and entrypoint."""
@@ -232,11 +234,19 @@ class ExecutionPipeline:
         prompt_for_log = extract_prompt_for_log(messages)
 
         strategy = self._build_strategy(ctx, messages)
+        messages_for_prompt = messages
+        if (
+            self._stream_compaction.enabled
+            and ctx.resolved_execution_mode
+            and ctx.resolved_execution_mode != "single"
+        ):
+            decision = self._stream_compaction.apply(messages)
+            messages_for_prompt = decision.kept_messages
 
         if ctx.resolved_execution_mode == "single":
             prompt, _ = split_messages_for_single_mode(messages)
         else:
-            prompt = build_multiagent_prompt(messages)
+            prompt = build_multiagent_prompt(messages_for_prompt)
 
         turn_ctx = SessionTurnContext(
             session_id=ctx.session_id,

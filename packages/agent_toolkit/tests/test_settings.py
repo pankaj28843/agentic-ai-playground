@@ -20,3 +20,10 @@ def test_load_settings_tool_truncation_default() -> None:
     """Test that tool result truncation is enabled by default."""
     settings = load_settings()
     assert settings.should_truncate_tool_results is True
+
+
+def test_load_settings_capability_policy_defaults() -> None:
+    settings = load_settings()
+    assert settings.capability_allowlist == []
+    assert settings.capability_denylist == []
+    assert settings.stream_compaction_enabled is False

@@ -138,12 +138,8 @@ class ConfigService:
             }
         return profiles
 
-    def get_graph_template(self, template_name: str) -> dict[str, Any] | None:
-        """Return graph template configuration."""
-        schema = self.get_schema()
-        graph = schema.graphs.get(template_name)
-        if not graph:
-            return None
+    @staticmethod
+    def _map_graph_template(graph: Any) -> dict[str, Any]:
         return {
             "name": graph.name,
             "description": graph.description,
@@ -153,12 +149,8 @@ class ConfigService:
             "timeouts": graph.timeouts,
         }
 
-    def get_swarm_template(self, template_name: str) -> dict[str, Any] | None:
-        """Return swarm template configuration."""
-        schema = self.get_schema()
-        swarm = schema.swarms.get(template_name)
-        if not swarm:
-            return None
+    @staticmethod
+    def _map_swarm_template(swarm: Any) -> dict[str, Any]:
         return {
             "name": swarm.name,
             "description": swarm.description,
@@ -168,6 +160,32 @@ class ConfigService:
             "max_iterations": swarm.max_iterations,
             "timeouts": swarm.timeouts,
         }
+
+    def list_graph_templates(self) -> dict[str, dict[str, Any]]:
+        """Return all graph templates."""
+        schema = self.get_schema()
+        return {name: self._map_graph_template(graph) for name, graph in schema.graphs.items()}
+
+    def list_swarm_templates(self) -> dict[str, dict[str, Any]]:
+        """Return all swarm templates."""
+        schema = self.get_schema()
+        return {name: self._map_swarm_template(swarm) for name, swarm in schema.swarms.items()}
+
+    def get_graph_template(self, template_name: str) -> dict[str, Any] | None:
+        """Return graph template configuration."""
+        schema = self.get_schema()
+        graph = schema.graphs.get(template_name)
+        if not graph:
+            return None
+        return self._map_graph_template(graph)
+
+    def get_swarm_template(self, template_name: str) -> dict[str, Any] | None:
+        """Return swarm template configuration."""
+        schema = self.get_schema()
+        swarm = schema.swarms.get(template_name)
+        if not swarm:
+            return None
+        return self._map_swarm_template(swarm)
 
 
 _config_service: ConfigService | None = None
