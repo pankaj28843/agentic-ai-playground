@@ -85,6 +85,12 @@ class ToolCatalog:
         self._capability_policy = capability_policy or CapabilityPolicy.from_settings(
             self._config_service.get_settings()
         )
+        if self._capability_policy.enabled():
+            logger.info(
+                "Capability policy enabled: allowlist=%s denylist=%s",
+                self._capability_policy.allowlist,
+                self._capability_policy.denylist,
+            )
 
     def expand_tools(
         self,

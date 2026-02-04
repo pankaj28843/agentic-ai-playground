@@ -242,6 +242,13 @@ class ExecutionPipeline:
         ):
             decision = self._stream_compaction.apply(messages)
             messages_for_prompt = decision.kept_messages
+            if decision.dropped_messages:
+                logger.info(
+                    "Stream compaction trimmed %d messages (kept=%d tokens_before=%d)",
+                    len(decision.dropped_messages),
+                    len(decision.kept_messages),
+                    decision.tokens_before,
+                )
 
         if ctx.resolved_execution_mode == "single":
             prompt, _ = split_messages_for_single_mode(messages)
