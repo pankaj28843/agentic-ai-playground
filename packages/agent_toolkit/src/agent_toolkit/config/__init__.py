@@ -14,11 +14,14 @@ from agent_toolkit.config.profiles import (
     expand_agent_tools,
     load_profiles,
 )
+from agent_toolkit.config.service import ConfigService, ConfigSnapshot, get_config_service
 from agent_toolkit.config.settings import Settings, load_settings
 from agent_toolkit.config.swarm_presets import SwarmPreset, load_swarm_presets
 
 __all__ = [
     "AgentProfile",
+    "ConfigService",
+    "ConfigSnapshot",
     "ProfileType",
     "Settings",
     "SwarmPreset",
@@ -28,6 +31,7 @@ __all__ = [
     "get_bundled_path",
     "get_config_dir",
     "get_config_paths",
+    "get_config_service",
     "get_external_path",
     "load_profiles",
     "load_settings",

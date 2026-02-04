@@ -1,12 +1,19 @@
 import pytest
+from agent_toolkit.application import ExecutionPlan, ToolingBuilder
+from agent_toolkit.config import get_config_service
 from agent_toolkit.runtime import AgentRuntime
+from agent_toolkit.tools import DEFAULT_TOOL_REGISTRY, ToolCatalog
 
 
 def test_profile_overrides_apply_model_and_tool_groups() -> None:
-    runtime = AgentRuntime()
-    profile = runtime.list_profiles()[0]
+    service = get_config_service()
+    profile = next(iter(service.build_profiles().values()))
+    tooling = ToolingBuilder(
+        settings=service.get_settings(),
+        catalog=ToolCatalog(DEFAULT_TOOL_REGISTRY, service),
+    )
 
-    updated = runtime.apply_profile_overrides(
+    updated = tooling.apply_profile_overrides(
         profile,
         model_override="bedrock.nova-pro",
         tool_groups_override=["strands_basic"],
@@ -18,10 +25,16 @@ def test_profile_overrides_apply_model_and_tool_groups() -> None:
 
 
 def test_profile_overrides_noop_returns_profile() -> None:
-    runtime = AgentRuntime()
-    profile = runtime.list_profiles()[0]
+    service = get_config_service()
+    profile = next(iter(service.build_profiles().values()))
+    tooling = ToolingBuilder(
+        settings=service.get_settings(),
+        catalog=ToolCatalog(DEFAULT_TOOL_REGISTRY, service),
+    )
 
-    updated = runtime.apply_profile_overrides(profile, None, None)
+    updated = tooling.apply_profile_overrides(
+        profile, model_override=None, tool_groups_override=None
+    )
 
     assert updated is profile
 
@@ -41,13 +54,13 @@ async def test_runtime_stream_passes_graph_overrides(monkeypatch) -> None:
         captured["tool_groups_override"] = kwargs.get("tool_groups_override")
         return DummyGraph()
 
-    monkeypatch.setattr("agent_toolkit.runtime.build_graph", fake_build_graph)
-
-    mode_resolver = runtime._mode_resolver  # noqa: SLF001
     monkeypatch.setattr(
-        mode_resolver,
-        "resolve_execution_mode",
-        lambda _profile: ("graph", "default", {}),
+        "agent_toolkit.application.execution_pipeline.build_graph", fake_build_graph
+    )
+    monkeypatch.setattr(
+        runtime._pipeline,  # noqa: SLF001
+        "resolve_plan",
+        lambda _profile: ExecutionPlan("graph", "default", {}),
     )
 
     async for _ in runtime.stream(
@@ -80,13 +93,13 @@ async def test_runtime_stream_passes_swarm_overrides(monkeypatch) -> None:
         captured["tool_groups_override"] = kwargs.get("tool_groups_override")
         return DummySwarm()
 
-    monkeypatch.setattr("agent_toolkit.runtime.build_swarm", fake_build_swarm)
-
-    mode_resolver = runtime._mode_resolver  # noqa: SLF001
     monkeypatch.setattr(
-        mode_resolver,
-        "resolve_execution_mode",
-        lambda _profile: ("swarm", "default", {}),
+        "agent_toolkit.application.execution_pipeline.build_swarm", fake_build_swarm
+    )
+    monkeypatch.setattr(
+        runtime._pipeline,  # noqa: SLF001
+        "resolve_plan",
+        lambda _profile: ExecutionPlan("swarm", "default", {}),
     )
 
     async for _ in runtime.stream(

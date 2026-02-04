@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 from agent_toolkit.agents.factory import AgentFactory
 from agent_toolkit.config import load_profiles, load_settings
-from agent_toolkit.config.new_loader import NewConfigLoader
+from agent_toolkit.config.service import get_config_service
 from agent_toolkit.mcp.client_resolver import get_mcp_clients_for_profile
 from agent_toolkit.models.profiles import AgentProfile
 from agent_toolkit.subagents.loader import SubagentLoader
@@ -131,11 +131,7 @@ class SubagentRunner:
         )
 
     def _load_tool_groups(self) -> dict[str, list[str]]:
-        loader = NewConfigLoader()
-        schema, validation = loader.load()
-        if not validation.valid:
-            msg = f"Configuration validation failed: {validation.errors}"
-            raise ValueError(msg)
+        schema = get_config_service().get_schema()
         return {name: list(group.tools) for name, group in schema.tool_groups.items()}
 
     def _load_definitions(self, cwd: str | None) -> dict[str, SubagentDefinition]:

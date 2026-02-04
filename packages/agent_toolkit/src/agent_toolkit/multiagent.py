@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import logging
-import tomllib
 from typing import TYPE_CHECKING, Any
 
 from strands.multiagent import GraphBuilder, Swarm
 
 from agent_toolkit.agents import AgentFactory
-from agent_toolkit.config import expand_agent_tools, load_profiles
-from agent_toolkit.config.config_paths import resolve_config_path
+from agent_toolkit.config import load_profiles
+from agent_toolkit.config.service import get_config_service
 from agent_toolkit.mcp.client_resolver import get_mcp_clients_for_profile
 from agent_toolkit.tools import DEFAULT_TOOL_REGISTRY
 
@@ -30,7 +29,7 @@ def _apply_profile_overrides(
     if model_override:
         updates["model"] = model_override
     if tool_groups_override is not None:
-        tools = expand_agent_tools(profile.name, tool_groups_override)
+        tools = get_config_service().expand_agent_tools(profile.name, tool_groups_override)
         updates["tools"] = tools
         updates["tool_groups"] = list(tool_groups_override)
     if not updates:
@@ -39,21 +38,34 @@ def _apply_profile_overrides(
 
 
 def _load_graph_templates() -> dict[str, dict[str, Any]]:
-    path = resolve_config_path("graphs")
-    if not path.exists():
-        return {}
-    with path.open("rb") as file:
-        data = tomllib.load(file)
-    return {name: dict(value) for name, value in data.get("graphs", {}).items()}
+    schema = get_config_service().get_schema()
+    templates: dict[str, dict[str, Any]] = {}
+    for name, graph in schema.graphs.items():
+        templates[name] = {
+            "name": graph.name,
+            "description": graph.description,
+            "entry_point": graph.entry_point,
+            "nodes": [{"name": node.name, "agent": node.agent} for node in graph.nodes],
+            "edges": [{"from": edge.from_node, "to": edge.to_node} for edge in graph.edges],
+            "timeouts": graph.timeouts,
+        }
+    return templates
 
 
 def _load_swarm_templates() -> dict[str, dict[str, Any]]:
-    path = resolve_config_path("swarms")
-    if not path.exists():
-        return {}
-    with path.open("rb") as file:
-        data = tomllib.load(file)
-    return {name: dict(value) for name, value in data.get("swarms", {}).items()}
+    schema = get_config_service().get_schema()
+    templates: dict[str, dict[str, Any]] = {}
+    for name, swarm in schema.swarms.items():
+        templates[name] = {
+            "name": swarm.name,
+            "description": swarm.description,
+            "entry_point": swarm.entry_point,
+            "agents": [{"name": agent.name, "agent": agent.agent} for agent in swarm.agents],
+            "max_handoffs": swarm.max_handoffs,
+            "max_iterations": swarm.max_iterations,
+            "timeouts": swarm.timeouts,
+        }
+    return templates
 
 
 def _load_profiles_for_settings(_settings: Settings) -> dict[str, Any]:

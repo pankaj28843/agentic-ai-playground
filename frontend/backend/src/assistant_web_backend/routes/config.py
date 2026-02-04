@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from agent_toolkit.config import load_settings
-from agent_toolkit.config.new_loader import NewConfigLoader
+from agent_toolkit.config import get_config_service
 from agent_toolkit.providers import load_providers
 from fastapi import APIRouter, HTTPException
 
@@ -109,10 +108,11 @@ def list_resources() -> ResourcesResponse:
 @router.get("/settings", response_model=SettingsResponse)
 def list_settings() -> SettingsResponse:
     """List settings metadata for the UI (models, tool groups, defaults)."""
-    loader = NewConfigLoader()
-    schema, validation = loader.load()
+    snapshot = get_config_service().load_snapshot()
+    schema = snapshot.schema
+    validation = snapshot.validation
     registry = load_providers()
-    settings = load_settings()
+    settings = snapshot.settings
     bedrock_overrides = fetch_bedrock_overrides()
     models = bedrock_overrides.models or sorted(registry.list_models())
 

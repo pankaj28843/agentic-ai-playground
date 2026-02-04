@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from agent_toolkit.config.new_loader import NewConfigLoader
+from agent_toolkit.config.service import get_config_service
 from agent_toolkit.models.profiles import AgentProfile, ProfileType
 
 if TYPE_CHECKING:
@@ -16,12 +16,8 @@ def load_profiles(
     registry: ToolRegistry | None = None,
 ) -> dict[str, AgentProfile]:
     """Load atomic agent profiles from the new schema."""
-    loader = NewConfigLoader()
-    schema, validation = loader.load()
-    if not validation.valid:
-        msg = f"Configuration validation failed: {validation.errors}"
-        raise ValueError(msg)
-
+    service = get_config_service()
+    schema = service.get_schema()
     profiles: dict[str, AgentProfile] = {}
     for agent_name, agent in schema.agents.items():
         tools = _expand_agent_tools(agent_name, schema, registry)
@@ -48,11 +44,8 @@ def expand_agent_tools(
     tool_registry: ToolRegistry | None = None,  # kept for future expansion
 ) -> list[str]:
     """Expand agent tools including tool groups, with optional overrides."""
-    loader = NewConfigLoader()
-    schema, validation = loader.load()
-    if not validation.valid:
-        msg = f"Configuration validation failed: {validation.errors}"
-        raise ValueError(msg)
+    service = get_config_service()
+    schema = service.get_schema()
     return _expand_agent_tools(agent_name, schema, tool_registry, tool_groups)
 
 
