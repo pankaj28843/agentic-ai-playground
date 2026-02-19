@@ -88,7 +88,7 @@ class TestResilientMCPClient:
     def test_exponential_backoff_calculation(self):
         """Verify exponential backoff delay calculation."""
         resilient = ResilientMCPClient(
-            lambda: MagicMock(),
+            MagicMock,
             initial_delay=1.0,
             max_delay=30.0,
             backoff_multiplier=2.0,
@@ -104,7 +104,7 @@ class TestResilientMCPClient:
     def test_repr(self):
         """Test string representation."""
         resilient = ResilientMCPClient(
-            lambda: MagicMock(),
+            MagicMock,
             provider_name="techdocs",
             max_retries=5,
         )

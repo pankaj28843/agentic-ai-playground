@@ -9,9 +9,16 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
+import warnings
 from typing import TYPE_CHECKING, Any
 
-from strands.experimental.tools import ToolProvider
+# Support both old (experimental) and new (production) import paths
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    try:
+        from strands.tools import ToolProvider
+    except ImportError:
+        from strands.experimental.tools import ToolProvider
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence

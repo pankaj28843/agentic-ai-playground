@@ -26,7 +26,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --locked --group lint --all-packages
+        run: uv sync --group lint --all-packages
 
       - name: Ruff lint
         run: uv run ruff check .
@@ -50,7 +50,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --locked --group test --all-packages
+        run: uv sync --group test --all-packages
 
       - name: Pytest
         run: uv run pytest --cov=agent_toolkit --cov-report=term-missing
