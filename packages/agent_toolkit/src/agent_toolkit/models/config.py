@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class EntrypointType(str, Enum):
+class EntrypointType(StrEnum):
     """Type of execution entrypoint."""
 
     SINGLE = "single"

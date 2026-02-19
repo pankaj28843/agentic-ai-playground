@@ -19,7 +19,7 @@ def test_subagent_tool_formats_results(monkeypatch) -> None:
         def run_tasks(self, _tasks, mode="chain"):
             return [SubagentResult(agent="scout", prompt="", output="ok")]
 
-    monkeypatch.setattr("agent_toolkit.tools.subagents.SubagentRunner", lambda: FakeRunner())
+    monkeypatch.setattr("agent_toolkit.tools.subagents.SubagentRunner", FakeRunner)
 
     response = subagent(tasks=[{"agent": "scout", "prompt": "Hi"}], mode="chain")
     assert "Subagent results" in response

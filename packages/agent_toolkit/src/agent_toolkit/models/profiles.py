@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class ProfileType(str, Enum):
+class ProfileType(StrEnum):
     """Profile visibility type."""
 
     INTERNAL = "internal"
