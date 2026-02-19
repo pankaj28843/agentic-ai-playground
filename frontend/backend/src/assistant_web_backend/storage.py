@@ -252,6 +252,12 @@ class Storage:
             )
             _ensure_column(conn, "threads", "model_override", "TEXT")
             _ensure_column(conn, "threads", "tool_groups_override", "TEXT")
+            _ensure_column(conn, "messages", "run_profile", "TEXT")
+            _ensure_column(conn, "messages", "run_mode", "TEXT")
+            _ensure_column(conn, "messages", "execution_mode", "TEXT")
+            _ensure_column(conn, "messages", "entrypoint_reference", "TEXT")
+            _ensure_column(conn, "messages", "model_id", "TEXT")
+            _ensure_column(conn, "messages", "phoenix_session_id", "TEXT")
             _ensure_column(conn, "messages", "session_entry_id", "TEXT")
 
     @contextmanager
