@@ -44,8 +44,6 @@ class ThreadDetailResponse(ApiModel):
     status: str
     created_at: str = Field(alias="createdAt")
     updated_at: str = Field(alias="updatedAt")
-    model_override: str | None = Field(default=None, alias="modelOverride")
-    tool_groups_override: list[str] | None = Field(default=None, alias="toolGroupsOverride")
 
 
 class ChatRunRequest(ApiModel):
@@ -55,5 +53,3 @@ class ChatRunRequest(ApiModel):
     thread_id: str | None = Field(default=None, alias="threadId")
     profile: str | None = None
     run_mode: str | None = Field(default=None, alias="runMode")
-    model_override: str | None = Field(default=None, alias="modelOverride")
-    tool_groups_override: list[str] | None = Field(default=None, alias="toolGroupsOverride")

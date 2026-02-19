@@ -1,18 +1,7 @@
 import { createActor } from "xstate";
 import { describe, expect, it } from "vitest";
 
-import type { ResourcesResponse } from "@agentic-ai-playground/api-client";
 import { composerQueueMachine } from "../composerQueueMachine";
-
-const resources: ResourcesResponse = {
-  skills: [
-    { name: "review", description: "", content: "Do review", source: "" },
-  ],
-  prompts: [
-    { name: "summarize", description: "", content: "Summarize", source: "" },
-  ],
-  diagnostics: { warnings: [] },
-};
 
 describe("composerQueueMachine", () => {
   it("warns when attachments are queued", () => {
@@ -24,9 +13,6 @@ describe("composerQueueMachine", () => {
       mode: "follow-up",
       composerText: "Test",
       attachmentCount: 1,
-      resources,
-      enabledSkills: [],
-      enabledPrompts: [],
     });
 
     expect(actor.getSnapshot().context.warning).toBe("Attachments cannot be queued yet.");
@@ -41,9 +27,6 @@ describe("composerQueueMachine", () => {
       mode: "steer",
       composerText: "Hello",
       attachmentCount: 0,
-      resources,
-      enabledSkills: [],
-      enabledPrompts: [],
     });
 
     const snapshot = actor.getSnapshot();
@@ -61,9 +44,6 @@ describe("composerQueueMachine", () => {
       mode: "follow-up",
       composerText: "Hello",
       attachmentCount: 0,
-      resources,
-      enabledSkills: [],
-      enabledPrompts: [],
     });
 
     actor.send({ type: "ASSISTANT.RUNNING.CHANGED", isRunning: true });
@@ -82,9 +62,6 @@ describe("composerQueueMachine", () => {
       type: "SEND.REQUEST",
       composerText: "Send now",
       attachmentCount: 0,
-      resources,
-      enabledSkills: [],
-      enabledPrompts: [],
     });
 
     expect(actor.getSnapshot().context.pendingSend?.text).toBe("Send now");
@@ -98,9 +75,6 @@ describe("composerQueueMachine", () => {
       type: "SEND.REQUEST",
       composerText: "",
       attachmentCount: 0,
-      resources,
-      enabledSkills: [],
-      enabledPrompts: [],
     });
 
     const snapshot = actor.getSnapshot();

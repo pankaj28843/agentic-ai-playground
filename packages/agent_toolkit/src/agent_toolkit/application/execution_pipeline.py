@@ -68,8 +68,6 @@ class ExecutionPipeline:
         invocation_state: dict[str, str],
         execution_mode: str,
         entrypoint_reference: str,
-        model_override: str | None,
-        tool_groups_override: list[str] | None,
         profiles: dict[str, Any] | None = None,
     ) -> RuntimeAgent:
         """Build a runtime agent with telemetry hooks."""
@@ -83,8 +81,6 @@ class ExecutionPipeline:
             invocation_state=invocation_state,
             execution_mode=execution_mode,
             entrypoint_reference=entrypoint_reference,
-            model_override=model_override,
-            tool_groups_override=tool_groups_override,
             profiles=profiles,
         )
 
@@ -122,8 +118,6 @@ class ExecutionPipeline:
                 session_manager=session_manager,
                 template_name=plan.entrypoint_reference,
                 trace_attributes=trace_attrs,
-                model_override=ctx.model_override,
-                tool_groups_override=ctx.tool_groups_override,
             )
             result = graph(prompt, invocation_state=ctx.invocation_state)
         elif plan.execution_mode == "swarm":
@@ -133,8 +127,6 @@ class ExecutionPipeline:
                 preset=self._swarm_preset,
                 template_name=plan.entrypoint_reference,
                 trace_attributes=trace_attrs,
-                model_override=ctx.model_override,
-                tool_groups_override=ctx.tool_groups_override,
             )
             result = swarm(prompt, invocation_state=ctx.invocation_state)
         else:
@@ -145,8 +137,6 @@ class ExecutionPipeline:
                 invocation_state=ctx.invocation_state,
                 execution_mode=plan.execution_mode,
                 entrypoint_reference=plan.entrypoint_reference,
-                model_override=ctx.model_override,
-                tool_groups_override=ctx.tool_groups_override,
             )
             result = runtime_agent.agent(prompt)
             tool_events = build_tool_events_from_telemetry(runtime_agent.telemetry)
@@ -297,8 +287,6 @@ class ExecutionPipeline:
                 preset=self._swarm_preset,
                 template_name=plan.entrypoint_reference,
                 trace_attributes=trace_attrs,
-                model_override=ctx.model_override,
-                tool_groups_override=ctx.tool_groups_override,
             )
             return SwarmStrategy(swarm)
 
@@ -308,8 +296,6 @@ class ExecutionPipeline:
                 session_manager=None,
                 template_name=plan.entrypoint_reference,
                 trace_attributes=trace_attrs,
-                model_override=ctx.model_override,
-                tool_groups_override=ctx.tool_groups_override,
             )
             return GraphStrategy(graph)
 
@@ -321,7 +307,5 @@ class ExecutionPipeline:
             invocation_state=ctx.invocation_state,
             execution_mode=plan.execution_mode,
             entrypoint_reference=plan.entrypoint_reference,
-            model_override=ctx.model_override,
-            tool_groups_override=ctx.tool_groups_override,
         )
         return SingleAgentStrategy(runtime_agent.agent, history_messages)

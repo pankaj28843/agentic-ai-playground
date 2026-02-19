@@ -1,20 +1,10 @@
 import { assign, setup } from "xstate";
 
-import type { ResourcesResponse } from "@agentic-ai-playground/api-client";
-
-import { parseCommand, resolveCommand } from "../utils/commands";
-
 type QueueMode = "steer" | "follow-up";
 
 type QueueItem = {
   text: string;
   mode: QueueMode;
-};
-
-type CommandResolution = {
-  resolvedText: string;
-  applied: boolean;
-  error?: string;
 };
 
 type QueueContext = {
@@ -36,33 +26,16 @@ type QueueEvent =
       mode: QueueMode;
       composerText: string;
       attachmentCount: number;
-      resources: ResourcesResponse | null;
-      enabledSkills: string[];
-      enabledPrompts: string[];
     }
   | {
       type: "SEND.REQUEST";
       composerText: string;
       attachmentCount: number;
-      resources: ResourcesResponse | null;
-      enabledSkills: string[];
-      enabledPrompts: string[];
     }
   | { type: "ASSISTANT.RUNNING.CHANGED"; isRunning: boolean }
   | { type: "SEND.DISPATCHED" }
   | { type: "RESET.ACK" }
   | { type: "CANCEL.ACK" };
-
-const resolveComposerText = (
-  composerText: string,
-  resources: ResourcesResponse | null,
-  enabledSkills: string[],
-  enabledPrompts: string[],
-): CommandResolution => {
-  const parsed = parseCommand(composerText);
-  const enabled = parsed?.type === "prompt" ? enabledPrompts : enabledSkills;
-  return resolveCommand(composerText, resources, enabled);
-};
 
 export const composerQueueMachine = setup({
   types: {
@@ -79,17 +52,8 @@ export const composerQueueMachine = setup({
       if (params.attachmentCount > 0) {
         return { warning: "Attachments cannot be queued yet." };
       }
-      const resolution = resolveComposerText(
-        params.composerText,
-        params.resources,
-        params.enabledSkills,
-        params.enabledPrompts,
-      );
-      if (resolution.error) {
-        return { warning: resolution.error };
-      }
       const nextItem = {
-        text: resolution.applied ? resolution.resolvedText : params.composerText,
+        text: params.composerText,
         mode: params.mode,
       };
       return {
@@ -104,17 +68,8 @@ export const composerQueueMachine = setup({
       if (!params.composerText && params.attachmentCount === 0) {
         return { warning: null };
       }
-      const resolution = resolveComposerText(
-        params.composerText,
-        params.resources,
-        params.enabledSkills,
-        params.enabledPrompts,
-      );
-      if (resolution.error) {
-        return { warning: resolution.error };
-      }
       const pending = {
-        text: resolution.applied ? resolution.resolvedText : params.composerText,
+        text: params.composerText,
         mode: "follow-up" as const,
       };
       return {

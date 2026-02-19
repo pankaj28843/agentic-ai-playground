@@ -87,15 +87,9 @@ vi.mock("../state/appDataContext", () => ({
     }),
 }));
 
-vi.mock("../state/useOverrides", () => ({
-  useOverrides: () => ({ modelOverride: "model", toolGroupsOverride: ["tools"] }),
-}));
+vi.mock("../state/useOverrides", () => ({}));
 
-vi.mock("../state/overridesContext", () => ({
-  OverridesProvider: ({ children }: { children: ReactNode }) => (
-    <div data-testid="overrides">{children}</div>
-  ),
-}));
+vi.mock("../state/overridesContext", () => ({}));
 
 vi.mock("../state/themeContext", () => ({
   ThemeProvider: ({ children }: { children: ReactNode }) => (
@@ -126,7 +120,6 @@ vi.mock("../components/ThreadNotFound", () => ({
   ),
 }));
 vi.mock("../components/TracePanel", () => ({ TracePanel: () => <div>TracePanel</div> }));
-vi.mock("../components/SettingsPanel", () => ({ SettingsPanel: () => <div>SettingsPanel</div> }));
 
 const profiles: ProfilesResponse = {
   profiles: [
@@ -328,7 +321,6 @@ describe("App", () => {
   it("wraps providers", () => {
     render(<App />);
     expect(screen.getByTestId("app-data")).toBeInTheDocument();
-    expect(screen.getByTestId("overrides")).toBeInTheDocument();
     expect(screen.getByTestId("theme")).toBeInTheDocument();
     expect(screen.getByTestId("layout")).toBeInTheDocument();
   });

@@ -4,7 +4,6 @@ import type { FC } from "react";
 import { useCallback, useEffect } from "react";
 import { useMachine } from "@xstate/react";
 
-import { useResources } from "../contexts/ResourcesContext";
 import { composerQueueMachine, type QueueMode } from "../state/composerQueueMachine";
 import styles from "./ThreadView.module.css";
 
@@ -13,7 +12,6 @@ export const QueuedComposerControls: FC = () => {
   const isRunning = useAssistantState(({ thread }) => thread.isRunning);
   const composerText = useAssistantState(({ composer }) => composer.text);
   const attachmentCount = useAssistantState(({ composer }) => composer.attachments.length);
-  const { resources, enabledPrompts, enabledSkills } = useResources();
   const [state, send] = useMachine(composerQueueMachine, { input: {} });
   const { queue, warning, pendingSend, pendingReset, cancelRequested } = state.context;
 
@@ -24,12 +22,9 @@ export const QueuedComposerControls: FC = () => {
         mode,
         composerText,
         attachmentCount,
-        resources,
-        enabledPrompts,
-        enabledSkills,
       });
     },
-    [attachmentCount, composerText, enabledPrompts, enabledSkills, resources, send],
+    [attachmentCount, composerText, send],
   );
 
   useEffect(() => {
@@ -72,9 +67,6 @@ export const QueuedComposerControls: FC = () => {
               type: "SEND.REQUEST",
               composerText,
               attachmentCount,
-              resources,
-              enabledPrompts,
-              enabledSkills,
             });
           }}
         >

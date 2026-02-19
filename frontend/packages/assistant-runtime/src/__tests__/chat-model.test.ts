@@ -19,11 +19,10 @@ const buildReader = (payload: string) => {
 };
 
 describe("createChatAdapter", () => {
-  it("uses latest overrides and maps agent events to data parts", async () => {
+  it("uses latest run mode and maps agent events to data parts", async () => {
     let runMode = "quick";
-    let overrides = { modelOverride: "model-a", toolGroupsOverride: ["tools"] };
 
-    const adapter = createChatAdapter(() => runMode, () => overrides);
+    const adapter = createChatAdapter(() => runMode);
 
     const payload =
       JSON.stringify({
@@ -62,8 +61,6 @@ describe("createChatAdapter", () => {
         messages: [],
         threadId: "t1",
         runMode: "quick",
-        modelOverride: "model-a",
-        toolGroupsOverride: ["tools"],
       },
       undefined,
     );
@@ -74,7 +71,6 @@ describe("createChatAdapter", () => {
     expect(toolPart?.args).toEqual({ q: "value" });
 
     runMode = "graph";
-    overrides = { modelOverride: "model-b", toolGroupsOverride: null };
 
     await adapter.run({ messages: [], abortSignal: undefined, unstable_threadId: "t2" }).next();
 
@@ -83,8 +79,6 @@ describe("createChatAdapter", () => {
         messages: [],
         threadId: "t2",
         runMode: "graph",
-        modelOverride: "model-b",
-        toolGroupsOverride: undefined,
       },
       undefined,
     );

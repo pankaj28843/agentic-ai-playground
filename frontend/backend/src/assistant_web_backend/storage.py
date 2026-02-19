@@ -18,8 +18,6 @@ class ThreadRecord:
     status: str
     created_at: str
     updated_at: str
-    model_override: str | None = None
-    tool_groups_override: list[str] | None = None
 
 
 @dataclass(frozen=True)
@@ -54,8 +52,7 @@ class Storage:
     def list_threads(self) -> list[ThreadRecord]:
         """Return all threads ordered by most recent update."""
         rows = self._fetch_all(
-            """SELECT id, title, status, created_at, updated_at, model_override,
-                      tool_groups_override
+            """SELECT id, title, status, created_at, updated_at
                FROM threads ORDER BY updated_at DESC"""
         )
         return [
@@ -65,8 +62,6 @@ class Storage:
                 status=row[2],
                 created_at=row[3],
                 updated_at=row[4],
-                model_override=row[5],
-                tool_groups_override=json.loads(row[6]) if row[6] else None,
             )
             for row in rows
         ]
@@ -80,18 +75,17 @@ class Storage:
         with self._connection() as conn:
             self._execute(
                 """INSERT INTO threads
-                   (id, title, status, created_at, updated_at, model_override, tool_groups_override)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (remote_id, None, "regular", now, now, None, None),
+                   (id, title, status, created_at, updated_at)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (remote_id, None, "regular", now, now),
                 conn=conn,
             )
-        return ThreadRecord(remote_id, None, "regular", now, now, None, None)
+        return ThreadRecord(remote_id, None, "regular", now, now)
 
     def fetch_thread(self, remote_id: str) -> ThreadRecord | None:
         """Fetch a thread by ID."""
         rows = self._fetch_all(
-            """SELECT id, title, status, created_at, updated_at, model_override,
-                      tool_groups_override
+            """SELECT id, title, status, created_at, updated_at
                FROM threads WHERE id = ?""",
             (remote_id,),
         )
@@ -104,30 +98,7 @@ class Storage:
             status=row[2],
             created_at=row[3],
             updated_at=row[4],
-            model_override=row[5],
-            tool_groups_override=json.loads(row[6]) if row[6] else None,
         )
-
-    def update_thread_overrides(
-        self,
-        remote_id: str,
-        model_override: str | None,
-        tool_groups_override: list[str] | None,
-    ) -> None:
-        """Persist override metadata for a thread."""
-        tool_groups_value = (
-            json.dumps(tool_groups_override, ensure_ascii=True)
-            if tool_groups_override is not None
-            else None
-        )
-        with self._connection() as conn:
-            self._execute(
-                """UPDATE threads
-                   SET model_override = ?, tool_groups_override = ?, updated_at = ?
-                   WHERE id = ?""",
-                (model_override, tool_groups_value, _timestamp(), remote_id),
-                conn=conn,
-            )
 
     def rename_thread(self, remote_id: str, title: str) -> None:
         """Rename a thread by ID."""
@@ -224,9 +195,7 @@ class Storage:
                     title TEXT,
                     status TEXT NOT NULL,
                     created_at TEXT NOT NULL,
-                    updated_at TEXT NOT NULL,
-                    model_override TEXT,
-                    tool_groups_override TEXT
+                    updated_at TEXT NOT NULL
                 )
                 """
             )
@@ -250,8 +219,6 @@ class Storage:
                 )
                 """
             )
-            _ensure_column(conn, "threads", "model_override", "TEXT")
-            _ensure_column(conn, "threads", "tool_groups_override", "TEXT")
             _ensure_column(conn, "messages", "run_profile", "TEXT")
             _ensure_column(conn, "messages", "run_mode", "TEXT")
             _ensure_column(conn, "messages", "execution_mode", "TEXT")

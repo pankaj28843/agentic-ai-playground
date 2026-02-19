@@ -34,8 +34,6 @@ export type ThreadDetail = {
   status: ThreadStatus;
   createdAt: string;
   updatedAt: string;
-  modelOverride?: string | null;
-  toolGroupsOverride?: string[] | null;
 };
 
 export type ThreadListResponse = {
@@ -63,60 +61,6 @@ export type PhoenixConfig = {
   baseUrl?: string;
   projectName?: string;
   projectId?: string;
-};
-
-export type SkillResource = {
-  name: string;
-  description: string;
-  content: string;
-  source: string;
-};
-
-export type PromptResource = {
-  name: string;
-  description: string;
-  content: string;
-  source: string;
-};
-
-export type ResourceDiagnostics = {
-  warnings: string[];
-};
-
-export type ResourcesResponse = {
-  skills: SkillResource[];
-  prompts: PromptResource[];
-  diagnostics: ResourceDiagnostics;
-};
-
-export type ToolGroupSummary = {
-  name: string;
-  description: string;
-  tools: string[];
-  capabilities: string[];
-};
-
-export type InferenceProfileSummary = {
-  inferenceProfileId?: string | null;
-  inferenceProfileArn?: string | null;
-  name?: string | null;
-  status?: string | null;
-  type?: string | null;
-};
-
-export type ProfileDefaults = {
-  profileId: string;
-  model?: string | null;
-  toolGroups: string[];
-};
-
-export type SettingsResponse = {
-  models: string[];
-  defaultModel?: string | null;
-  toolGroups: ToolGroupSummary[];
-  profileDefaults: ProfileDefaults[];
-  inferenceProfiles?: InferenceProfileSummary[];
-  warnings: string[];
 };
 
 export type SessionEntryView = {
@@ -207,8 +151,6 @@ export type ChatRunRequest = {
   threadId?: string;
   profile?: string;
   runMode?: string;
-  modelOverride?: string | null;
-  toolGroupsOverride?: string[] | null;
 };
 
 /**
@@ -256,14 +198,6 @@ export class ApiClient {
     } catch {
       return { enabled: false };
     }
-  }
-
-  async listResources(): Promise<ResourcesResponse> {
-    return this.getJson("/api/resources");
-  }
-
-  async getSettings(): Promise<SettingsResponse> {
-    return this.getJson("/api/settings");
   }
 
   async createThread(): Promise<{ remoteId: string }> {

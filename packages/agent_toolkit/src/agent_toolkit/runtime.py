@@ -120,8 +120,6 @@ class AgentRuntime:
         invocation_state: dict[str, str] | None = None,
         execution_mode: str = "",
         entrypoint_reference: str = "",
-        model_override: str | None = None,
-        tool_groups_override: list[str] | None = None,
     ) -> RuntimeAgent:
         """Create a runtime agent for a given profile."""
         return self._pipeline.create_agent(
@@ -131,8 +129,6 @@ class AgentRuntime:
             invocation_state=invocation_state or {},
             execution_mode=execution_mode,
             entrypoint_reference=entrypoint_reference,
-            model_override=model_override,
-            tool_groups_override=tool_groups_override,
             profiles=load_profiles(),
         )
 
@@ -143,9 +139,6 @@ class AgentRuntime:
         prompt: str,
         invocation_state: dict[str, str],
         session_id: str,
-        *,
-        model_override: str | None = None,
-        tool_groups_override: list[str] | None = None,
     ) -> object:
         """Run a request based on the selected mode (sync, non-streaming)."""
         ctx = ExecutionContext(
@@ -153,8 +146,6 @@ class AgentRuntime:
             profile_name=profile_name,
             session_id=session_id,
             invocation_state=invocation_state,
-            model_override=model_override,
-            tool_groups_override=tool_groups_override,
         )
         return self._pipeline.run(ctx, prompt)
 
@@ -165,9 +156,6 @@ class AgentRuntime:
         messages: list[dict[str, Any]],
         invocation_state: dict[str, str],
         session_id: str,
-        *,
-        model_override: str | None = None,
-        tool_groups_override: list[str] | None = None,
     ):
         """Stream a request based on the selected mode."""
         ctx = ExecutionContext(
@@ -175,8 +163,6 @@ class AgentRuntime:
             profile_name=profile_name,
             session_id=session_id,
             invocation_state=invocation_state,
-            model_override=model_override,
-            tool_groups_override=tool_groups_override,
         )
         async for event in self._pipeline.stream(ctx, messages):
             yield event

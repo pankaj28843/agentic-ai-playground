@@ -6,9 +6,6 @@ This package contains all request/response models organized by domain.
 from assistant_web_backend.models.base import ApiModel
 from assistant_web_backend.models.config import (
     PhoenixConfigResponse,
-    ProfileDefaults,
-    SettingsResponse,
-    ToolGroupSummary,
 )
 from assistant_web_backend.models.messages import (
     ContentPart,
@@ -21,12 +18,6 @@ from assistant_web_backend.models.messages import (
     ToolCallStatus,
 )
 from assistant_web_backend.models.profiles import ProfilesResponse, ProfileSummary
-from assistant_web_backend.models.resources import (
-    PromptResource,
-    ResourceDiagnostics,
-    ResourcesResponse,
-    SkillResource,
-)
 from assistant_web_backend.models.sessions import (
     SessionEntryView,
     SessionHeaderView,
@@ -50,20 +41,14 @@ __all__ = [
     "MessageAppendRequest",
     "MessagePayload",
     "PhoenixConfigResponse",
-    "ProfileDefaults",
     "ProfileSummary",
     "ProfilesResponse",
-    "PromptResource",
-    "ResourceDiagnostics",
-    "ResourcesResponse",
     "RichStreamChunk",
     "SessionEntryView",
     "SessionHeaderView",
     "SessionLabelRequest",
     "SessionLabelResponse",
     "SessionTreeResponse",
-    "SettingsResponse",
-    "SkillResource",
     "ThreadCreateResponse",
     "ThreadDetailResponse",
     "ThreadListResponse",
@@ -73,5 +58,4 @@ __all__ = [
     "TitleRequest",
     "TitleResponse",
     "ToolCallStatus",
-    "ToolGroupSummary",
 ]

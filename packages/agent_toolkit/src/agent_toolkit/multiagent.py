@@ -47,15 +47,13 @@ def build_graph(
     session_manager: Any = None,
     template_name: str = "default",
     trace_attributes: dict[str, str] | None = None,
-    model_override: str | None = None,
-    tool_groups_override: list[str] | None = None,
 ) -> Any:
     """Build a deterministic Graph orchestrator from templates.
 
     Uses template_name to select which graph configuration to use.
     Raises ValueError if the requested template doesn't exist.
 
-    Supports model override per node and run-level overrides for all nodes.
+    Supports model override per node from template configuration.
     """
     templates = get_config_service().list_graph_templates()
     template = templates.get(template_name)
@@ -80,16 +78,15 @@ def build_graph(
             msg = f"Unknown agent in graph template: {agent_name}"
             raise ValueError(msg)
 
-        # Apply overrides (UI override takes precedence over template override)
-        resolved_model = model_override or node_model_override
-        profile = _apply_profile_overrides(profile, resolved_model, tool_groups_override)
+        # Apply template-level override if specified
+        profile = _apply_profile_overrides(profile, node_model_override, None)
 
         mcp_clients = get_mcp_clients_for_profile(profile)
         agent = factory.create_from_profile(
             profile,
             use_session_manager=False,
             use_conversation_manager=False,
-            mcp_clients=mcp_clients if mcp_clients else None,
+            mcp_clients=mcp_clients or None,
             trace_attributes=trace_attributes,
         )
         builder.add_node(agent, node_name)
@@ -127,15 +124,13 @@ def build_swarm(
     preset: SwarmPreset | None = None,
     template_name: str = "default",
     trace_attributes: dict[str, str] | None = None,
-    model_override: str | None = None,
-    tool_groups_override: list[str] | None = None,
 ) -> Swarm:
     """Build a Swarm orchestrator from templates.
 
     Uses template_name to select which swarm configuration to use.
     Raises ValueError if the requested template doesn't exist.
 
-    Supports model override per agent and run-level overrides for all agents.
+    Supports model override per agent from template configuration.
     """
     templates = get_config_service().list_swarm_templates()
     template = templates.get(template_name)
@@ -161,9 +156,8 @@ def build_swarm(
             msg = f"Unknown agent in swarm template: {profile_name}"
             raise ValueError(msg)
 
-        # Apply overrides (UI override takes precedence over template override)
-        resolved_model = model_override or agent_model_override
-        profile = _apply_profile_overrides(profile, resolved_model, tool_groups_override)
+        # Apply template-level override if specified
+        profile = _apply_profile_overrides(profile, agent_model_override, None)
 
         mcp_clients = get_mcp_clients_for_profile(profile)
         logger.info(
@@ -178,7 +172,7 @@ def build_swarm(
             profile,
             use_session_manager=False,
             use_conversation_manager=False,
-            mcp_clients=mcp_clients if mcp_clients else None,
+            mcp_clients=mcp_clients or None,
             trace_attributes=trace_attributes,
         )
         agent.name = agent_name

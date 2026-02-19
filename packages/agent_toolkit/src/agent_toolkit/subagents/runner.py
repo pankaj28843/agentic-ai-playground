@@ -90,7 +90,7 @@ class SubagentRunner:
             agent = self._factory.create_from_profile(
                 profile,
                 session_id=f"subagent-{profile.name}-{uuid4()}",
-                mcp_clients=mcp_clients if mcp_clients else None,
+                mcp_clients=mcp_clients or None,
             )
             result = agent(prompt)
             output = (

@@ -47,8 +47,6 @@ class ExecutionContext:
     resolved_metadata: dict[str, Any] = field(default_factory=dict)
     resolved_execution_mode: str = ""
     resolved_entrypoint: str = ""
-    model_override: str | None = None
-    tool_groups_override: list[str] | None = None
 
     @property
     def resource_uri(self) -> str:
