@@ -4,14 +4,12 @@ import {
 } from "@agentic-ai-playground/api-client";
 import {
   AssistantRuntimeProvider,
-  type RunOverrides,
   useThreadRouterSync,
 } from "@agentic-ai-playground/assistant-runtime";
 import { Bot, Loader2, Menu, Monitor, Moon, Sun, X } from "lucide-react";
 import { useCallback, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { SettingsPanel } from "./components/SettingsPanel";
 import { SessionTreePanel } from "./components/SessionTreePanel";
 import { ThreadList } from "./components/ThreadList";
 import { ThreadNotFound } from "./components/ThreadNotFound";
@@ -23,8 +21,6 @@ import { useResizableSidebar, useTheme } from "./hooks";
 import { AppDataProvider, useAppDataActor, useAppDataSelector } from "./state/appDataContext";
 import { AppShellProvider, useAppShell } from "./state/appShellContext";
 import { LayoutProvider } from "./state/layoutContext";
-import { OverridesProvider } from "./state/overridesContext";
-import { useOverrides } from "./state/useOverrides";
 import { ThemeProvider } from "./state/themeContext";
 import styles from "./App.module.css";
 
@@ -175,7 +171,6 @@ export const AppContent = ({
             })}
           </select>
         </label>
-        <SettingsPanel profiles={profiles} runMode={runMode} />
       </div>
     </>
   );
@@ -289,20 +284,14 @@ export const AppShell = () => {
   const profiles = useAppDataSelector((state) => state.context.profiles);
   const runMode = useAppDataSelector((state) => state.context.runMode);
   const actorRef = useAppDataActor();
-  const { modelOverride, toolGroupsOverride } = useOverrides();
 
   const setRunMode = (mode: string) => {
     actorRef.send({ type: "RUNMODE.SET", value: mode });
   };
 
-  const runOverrides: RunOverrides = {
-    modelOverride,
-    toolGroupsOverride,
-  };
-
   return (
     <TraceProvider>
-      <AssistantRuntimeProvider runMode={runMode} runOverrides={runOverrides}>
+      <AssistantRuntimeProvider runMode={runMode}>
         <SessionTreeProvider>
           <AppContent profiles={profiles} runMode={runMode} setRunMode={setRunMode} />
         </SessionTreeProvider>
@@ -312,19 +301,15 @@ export const AppShell = () => {
 };
 
 export const App = () => {
-  const { conversationId } = useParams<{ conversationId?: string }>();
-
   return (
     <AppDataProvider apiClient={apiClient}>
-      <OverridesProvider apiClient={apiClient} threadId={conversationId ?? null}>
-        <ThemeProvider>
-          <LayoutProvider>
-            <AppShellProvider>
-              <AppShell />
-            </AppShellProvider>
-          </LayoutProvider>
-        </ThemeProvider>
-      </OverridesProvider>
+      <ThemeProvider>
+        <LayoutProvider>
+          <AppShellProvider>
+            <AppShell />
+          </AppShellProvider>
+        </LayoutProvider>
+      </ThemeProvider>
     </AppDataProvider>
   );
 };

@@ -11,7 +11,6 @@ import {
 
 import { ApiClient } from "@agentic-ai-playground/api-client";
 import { createChatAdapter, threadListAdapter } from "./adapters";
-import type { RunOverrides } from "./types";
 export { getActiveSessionBranch, setActiveSessionBranch, subscribeSessionBranch } from "./session-branch";
 
 // Re-export converters for external use
@@ -25,28 +24,21 @@ const api = new ApiClient(baseUrl);
 export const AssistantRuntimeProvider = ({
   children,
   runMode,
-  runOverrides,
 }: {
   children: ReactNode;
   runMode?: string;
-  runOverrides?: RunOverrides;
 }) => {
   const runModeRef = useRef(runMode);
-  const runOverridesRef = useRef(runOverrides);
 
   useEffect(() => {
     runModeRef.current = runMode;
   }, [runMode]);
 
-  useEffect(() => {
-    runOverridesRef.current = runOverrides;
-  }, [runOverrides]);
-
   const runtime = useRemoteThreadListRuntime({
     runtimeHook: () => {
       // eslint-disable-next-line react-hooks/rules-of-hooks -- hook factory invoked by useRemoteThreadListRuntime
       return useLocalRuntime(
-        createChatAdapter(() => runModeRef.current, () => runOverridesRef.current),
+        createChatAdapter(() => runModeRef.current),
       );
     },
     adapter: threadListAdapter,
@@ -218,5 +210,3 @@ export const useThreadRouterSync = (
     threadNotFound,
   };
 };
-
-export type { RunOverrides };

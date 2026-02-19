@@ -46,16 +46,14 @@ describe("AssistantRuntimeProvider", () => {
     vi.clearAllMocks();
   });
 
-  it("keeps run mode and overrides getters in sync", async () => {
+  it("keeps run mode getter in sync", async () => {
     const container = document.createElement("div");
     const root = createRoot(container);
 
     let getRunMode: (() => string | undefined) | undefined;
-    let getOverrides: (() => { modelOverride?: string | null } | undefined) | undefined;
 
-    vi.mocked(createChatAdapter).mockImplementation((runModeGetter, overridesGetter) => {
+    vi.mocked(createChatAdapter).mockImplementation((runModeGetter) => {
       getRunMode = runModeGetter;
-      getOverrides = overridesGetter;
       return {
         run: async function* () {
           yield {};
@@ -65,25 +63,23 @@ describe("AssistantRuntimeProvider", () => {
 
     await act(async () => {
       root.render(
-        <AssistantRuntimeProvider runMode="quick" runOverrides={{ modelOverride: "m1" }}>
+        <AssistantRuntimeProvider runMode="quick">
           <div />
         </AssistantRuntimeProvider>,
       );
     });
 
     expect(getRunMode?.()).toBe("quick");
-    expect(getOverrides?.()?.modelOverride).toBe("m1");
 
     await act(async () => {
       root.render(
-        <AssistantRuntimeProvider runMode="graph" runOverrides={{ modelOverride: "m2" }}>
+        <AssistantRuntimeProvider runMode="graph">
           <div />
         </AssistantRuntimeProvider>,
       );
     });
 
     expect(getRunMode?.()).toBe("graph");
-    expect(getOverrides?.()?.modelOverride).toBe("m2");
 
     await act(async () => {
       root.unmount();

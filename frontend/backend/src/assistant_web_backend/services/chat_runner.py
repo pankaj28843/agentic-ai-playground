@@ -194,11 +194,6 @@ async def stream_chat(
 
     if thread_id:
         storage.create_thread(thread_id)
-        storage.update_thread_overrides(
-            thread_id,
-            payload.model_override,
-            payload.tool_groups_override,
-        )
 
     invocation_state = _build_invocation_state(runtime, thread_id, run_mode, message_id)
 
@@ -209,8 +204,6 @@ async def stream_chat(
             messages=strands_messages,
             invocation_state=invocation_state,
             session_id=thread_id or f"thread-{run_mode}",
-            model_override=payload.model_override,
-            tool_groups_override=payload.tool_groups_override,
         ):
             trace_id_from_event = _extract_phoenix_metadata(event)
             if trace_id_from_event:
@@ -224,7 +217,7 @@ async def stream_chat(
             if event_data and state.handle_event(event_data):
                 yield _encode_rich_chunk(
                     state.build_content(),
-                    trace_id=captured_trace_id if captured_trace_id else None,
+                    trace_id=captured_trace_id or None,
                     session_id=thread_id or None,
                 )
 

@@ -24,7 +24,6 @@ import { useEffect, useId } from "react";
 import { useTrace } from "../contexts/TraceContext";
 import { MarkdownText } from "./MarkdownText";
 import { QueuedComposerControls } from "./QueuedComposerControls";
-import { SlashCommandMenu } from "./SlashCommandMenu";
 import { TraceIndicator, type TraceItem } from "./TracePanel";
 import styles from "./ThreadView.module.css";
 
@@ -83,7 +82,6 @@ const Composer: FC = () => {
           placeholder="Send a message..."
           rows={1}
         />
-        <SlashCommandMenu />
         <div className={styles.composerActions}>
           <ComposerAddAttachment />
           <QueuedComposerControls />

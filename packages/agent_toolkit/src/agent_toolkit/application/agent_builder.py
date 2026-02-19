@@ -31,8 +31,6 @@ def build_runtime_agent(
     invocation_state: dict[str, str],
     execution_mode: str,
     entrypoint_reference: str,
-    model_override: str | None,
-    tool_groups_override: list[str] | None,
     profiles: dict[str, Any] | None = None,
 ) -> RuntimeAgent:
     """Build a runtime agent with telemetry hooks."""
@@ -42,9 +40,7 @@ def build_runtime_agent(
         msg = f"Unknown agent profile: {profile_name}"
         raise ValueError(msg)
 
-    profile = tooling.apply_profile_overrides(
-        profile, model_override=model_override, tool_groups_override=tool_groups_override
-    )
+    profile = tooling.apply_profile_overrides(profile)
 
     telemetry = ToolTelemetry()
     hooks = [ToolTelemetryHook(telemetry)]
@@ -80,6 +76,6 @@ def build_runtime_agent(
         session_id=session_id,
         hooks=hooks,
         trace_attributes=trace_attrs or None,
-        mcp_clients=mcp_clients if mcp_clients else None,
+        mcp_clients=mcp_clients or None,
     )
     return RuntimeAgent(profile=profile, agent=agent, telemetry=telemetry)

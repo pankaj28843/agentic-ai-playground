@@ -1,8 +1,3 @@
-export type RunOverrides = {
-  modelOverride?: string | null;
-  toolGroupsOverride?: string[] | null;
-};
-
 export type PhoenixMetadata = {
   traceId?: string;
   sessionId?: string;
